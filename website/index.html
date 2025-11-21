@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberForge - Практика кибербезопасности</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 100%);
+            color: #00ff00;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+        }
+        h1 {
+            font-size: 3em;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ff00;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #ffff00;
+            font-size: 1.2em;
+        }
+        .challenges {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .challenge-card {
+            background: rgba(0, 255, 0, 0.05);
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+        }
+        .challenge-card:hover {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+            transform: translateY(-5px);
+        }
+        .challenge-card h2 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .challenge-card p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: #90ee90;
+        }
+        .challenge-card code {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 3px;
+            display: block;
+            margin: 10px 0;
+            color: #ffff00;
+            overflow-x: auto;
+            border-left: 3px solid #00ff00;
+            font-size: 0.9em;
+        }
+        .difficulty {
+            display: inline-block;
+            padding: 5px 10px;
+            background: rgba(255, 255, 0, 0.2);
+            border: 1px solid #ffff00;
+            border-radius: 3px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #ffff00;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #00ff00;
+            color: #888;
+            font-size: 0.9em;
+        }
+        .info-box {
+            background: rgba(255, 255, 0, 0.05);
+            border-left: 4px solid #ffff00;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 3px;
+        }
+        .info-box strong {
+            color: #ffff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ CyberForge ⚡</h1>
+            <p class="subtitle">Платформа для практики в кибербезопасности</p>
+        </header>
+
+        <div class="info-box">
+            <strong>📌 Как начать:</strong> Используйте SSH для подключения к челленджам. Найдите флаги и покажите результат!
+        </div>
+
+        <div class="challenges">
+            <div class="challenge-card">
+                <h2>🔐 Челлендж 1: Добро пожаловать</h2>
+                <p>Найдите флаг в домашней директории челленджа</p>
+                <p><strong>Подключение:</strong></p>
+                <code>ssh ctfuser@localhost -p 2222</code>
+                <p><strong>Пароль:</strong> <code>password123</code></p>
+                <p><strong>Команда для поиска:</strong></p>
+                <code>cat ~/challenge/flag.txt</code>
+                <div class="difficulty">Сложность: ⭐ (Базовый)</div>
+            </div>
+
+            <div class="challenge-card">
+                <h2>🔍 Челлендж 2: Скрытые файлы</h2>
+                <p>Найдите скрытый флаг в домашней директории</p>
+                <p><strong>Подключение:</strong></p>
+                <code>ssh ctfuser@localhost -p 2223</code>
+                <p><strong>Пароль:</strong> <code>password123</code></p>
+                <p><strong>Подсказка:</strong></p>
+                <code>ls -la ~/</code>
+                <div class="difficulty">Сложность: ⭐⭐ (Средний)</div>
+            </div>
+
+            <div class="challenge-card">
+                <h2>🎯 Челлендж 3: Поиск в системе</h2>
+                <p>Найдите флаг, используя утилиты поиска</p>
+                <p><strong>Подключение:</strong></p>
+                <code>ssh ctfuser@localhost -p 2224</code>
+                <p><strong>Пароль:</strong> <code>password123</code></p>
+                <p><strong>Подсказка:</strong></p>
+                <code>find ~/ -name "*flag*"</code>
+                <div class="difficulty">Сложность: ⭐⭐⭐ (Продвинутый)</div>
+            </div>
+        </div>
+
+        <footer>
+            <p>CyberForge MVP | Самохостируемая платформа для обучения кибербезопасности</p>
+        </footer>
+    </div>
+</body>
+</html>

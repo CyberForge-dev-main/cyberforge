@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  website:
+    image: nginx:latest
+    ports:
+      - "3000:80"
+    volumes:
+      - ./website:/usr/share/nginx/html:ro
+    container_name: cyberforge-website
+    restart: always
+
+  challenge-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.ch1
+    ports:
+      - "2222:22"
+    container_name: cyberforge-ch1
+    stdin_open: true
+    tty: true
+    restart: always
+
+  challenge-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.ch2
+    ports:
+      - "2223:22"
+    container_name: cyberforge-ch2
+    stdin_open: true
+    tty: true
+    restart: always
+
+  challenge-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.ch3
+    ports:
+      - "2224:22"
+    container_name: cyberforge-ch3
+    stdin_open: true
+    tty: true
+    restart: always
