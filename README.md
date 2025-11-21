@@ -16,7 +16,7 @@ CyberForge — локальная платформа для обучения к�
 ### Установка:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/cyberforge.git
+git clone https://github.com/CyberForge-dev-main/cyberforge.git
 cd cyberforge
 docker compose up --build
 ```
