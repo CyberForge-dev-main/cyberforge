@@ -42,3 +42,18 @@ services:
     stdin_open: true
     tty: true
     restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=sqlite:////app/cyberforge.db
+      - JWT_SECRET_KEY=super-secret-key-change-in-production
+    volumes:
+      - ./backend:/app
+    container_name: cyberforge-backend
+    restart: always

@@ -145,9 +145,9 @@ def init_db():
                 Challenge(name='Challenge 1', description='First SSH challenge', 
                          flag='flag{welcome_to_cyberforge_1}', points=100, port=2222),
                 Challenge(name='Challenge 2', description='Second SSH challenge', 
-                         flag='flag{welcome_to_cyberforge_2}', points=100, port=2223),
+                         flag='flag{linux_basics_are_fun}', points=100, port=2223),
                 Challenge(name='Challenge 3', description='Third SSH challenge', 
-                         flag='flag{welcome_to_cyberforge_3}', points=100, port=2224),
+                         flag='flag{find_and_conquer}', points=100, port=2224),
             ]
             for challenge in challenges:
                 db.session.add(challenge)
