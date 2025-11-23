@@ -141,7 +141,7 @@ Review test checklist:
 cat TESTING_CHECKLIST.md
 ```
 
----
+
 
 ## Project Structure
 '''
@@ -162,7 +162,7 @@ cyberforge/
 └── tests/
     └── health_check.sh
 '''
----
+
 
 ## Network Access (WiFi Demo)
 
