@@ -1,0 +1,86 @@
+
+========================================
+0. ОКРУЖЕНИЕ
+========================================
+
+[PASS] Docker: Docker version 29.0.2, build 8108357
+[PASS] Docker Compose
+[PASS] Python3: Python 3.12.3
+
+========================================
+1. СТРУКТУРА ФАЙЛОВ
+========================================
+
+[PASS] docker-compose.yml
+[PASS] README.md
+[PASS] backend/app.py
+[PASS] backend/config.py
+[PASS] package.json
+
+========================================
+2. DOCKER COMPOSE
+========================================
+
+[PASS] docker-compose.yml валиден
+
+========================================
+3. КОНТЕЙНЕРЫ
+========================================
+
+NAME                    IMAGE                          COMMAND                  SERVICE       CREATED          STATUS          PORTS
+cyberforge-backend      cyberforge-backend             "python app.py"          backend       31 minutes ago   Up 31 minutes   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
+cyberforge-ch1          cyberforge-challenge-1         "/usr/sbin/sshd -D"      challenge-1   6 hours ago      Up 6 hours      0.0.0.0:2222->22/tcp, [::]:2222->22/tcp
+cyberforge-ch2          cyberforge-challenge-2         "/usr/sbin/sshd -D"      challenge-2   6 hours ago      Up 6 hours      0.0.0.0:2223->22/tcp, [::]:2223->22/tcp
+cyberforge-ch3          cyberforge-challenge-3         "/usr/sbin/sshd -D"      challenge-3   6 hours ago      Up 6 hours      0.0.0.0:2224->22/tcp, [::]:2224->22/tcp
+cyberforge-juice-shop   bkimminich/juice-shop:latest   "/nodejs/bin/node /j…"   juice-shop    6 hours ago      Up 6 hours      0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+cyberforge-website      nginx:latest                   "/docker-entrypoint.…"   website       6 hours ago      Up 6 hours      0.0.0.0:3000->80/tcp, [::]:3000->80/tcp
+[PASS] Контейнеров: 6
+
+========================================
+4. BACKEND CONFIG
+========================================
+
+[PASS] SQLite в config.py
+
+========================================
+5. ПОРТЫ
+========================================
+
+[PASS] Порт :3000 открыт
+[PASS] Порт :5000 открыт
+[PASS] Порт :2222 открыт
+[PASS] Порт :2223 открыт
+[PASS] Порт :2224 открыт
+
+========================================
+6. BACKEND API
+========================================
+
+[PASS] Backend API отвечает
+{
+  "message": "Backend is running",
+  "status": "OK"
+}
+
+========================================
+7. БАЗА ДАННЫХ
+========================================
+
+[WARN] cyberforge.db не найден
+
+========================================
+8. GIT
+========================================
+
+[PASS] Git репозиторий
+
+========================================
+ИТОГ
+========================================
+
+Пройдено: 18
+Провалено: 0
+Предупреждений: 1
+Всего проверок: 19
+
+ВСЕ КРИТИЧЕСКИЕ ПРОВЕРКИ ПРОЙДЕНЫ
