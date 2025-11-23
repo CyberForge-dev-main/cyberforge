@@ -158,8 +158,8 @@ if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
 
 
-@app.route('/api/profile', methods=['GET'])
 @token_required
+@app.route('/api/profile', methods=['GET'])
 def get_profile(current_user):
     """Get current user profile"""
     return jsonify({
