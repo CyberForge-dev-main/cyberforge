@@ -478,15 +478,7 @@ CyberForge - https://github.com/CyberForge-dev-main/cyberforge
 | Дата обновления | 23 ноября 2025 |
 | Поддержка ОС | Linux, macOS, Windows (WSL2) |
 
----
 
-## Следующие шаги
-
-1. **Запустить платформу:** `docker compose up -d`
-2. **Открыть веб-интерфейс:** http://localhost:3000
-3. **Изучить практические задания** в контейнерах ch1, ch2, ch3
-4. **Присоединиться к разработке** — создать fork и pull request
-5. **Оставить feedback** через GitHub Issues
 
 ---
 
