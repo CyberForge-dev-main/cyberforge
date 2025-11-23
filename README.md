@@ -1,503 +1,399 @@
-<div align="center">
-
 # 🛡️ CyberForge
 
-### Interactive Cybersecurity Training Platform
+**Self-Hosted Cybersecurity Training Platform on Docker**
 
-*Master cybersecurity through hands-on challenges: SSH exploitation, web vulnerabilities, and API security*
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](docker-compose.yml)
-[![Python](https://img.shields.io/badge/Python-3.11-green.svg)](backend/)
-[![React](https://img.shields.io/badge/React-18-blue.svg)](package.json)
-
-[Quick Start](#-quick-start) • [Features](#-features) • [Architecture](#️-architecture) • [Documentation](#-documentation)
-
-</div>
+> Интерактивная платформа для практического обучения кибербезопасности в изолированной Docker среде
 
 ---
 
-## 🎯 Overview
-
-CyberForge is an all-in-one platform for learning cybersecurity through real-world scenarios. It combines Docker-isolated challenges with a modern web interface to provide a safe, comprehensive training environment.
-
-### What Makes CyberForge Unique?
-
-- **🚀 5-minute setup** with Docker Compose
-- **🔒 Isolated environments** for safe exploitation practice
-- **📊 Progress tracking** with backend API
-- **🎓 Progressive difficulty** from beginner to advanced
-- **💻 Multi-platform** support (Linux, macOS, WSL)
-
----
-
-## ⚡ Quick Start
-
-### Prerequisites
+## 📋 Быстрый старт (5 минут)
 
 ```bash
-# Check Docker installation
-docker --version && docker compose version
-
-# Requirements:
-# - Docker & Docker Compose
-# - 1GB free disk space
-# - Linux/macOS (or WSL on Windows)
-```
-
-### Installation
-
-```bash
-# 1. Clone repository
+# 1. Клонировать репозиторий
 git clone https://github.com/CyberForge-dev-main/cyberforge.git
 cd cyberforge
 
-# 2. Start all services
+# 2. Запустить контейнеры
 docker compose up -d
 
-# 3. Wait for initialization (45 seconds)
+# 3. Подождать инициализации
 sleep 45
 
-# 4. Verify health
-./tests/health_check.sh
-```
+# 4. Проверить статус
+docker compose ps
 
-### Access Points
-
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| 🎨 Dashboard | `http://localhost:3000` | No auth required |
-| 🍊 Juice Shop | `http://localhost:3001` | Create account |
-| 🔌 Backend API | `http://localhost:5000/api` | JWT-based |
-| 🖥️ SSH Challenge 1 | `ssh ctfuser@localhost -p 2222` | `password123` |
-| 🖥️ SSH Challenge 2 | `ssh ctfuser@localhost -p 2223` | *Find password* |
-| 🖥️ SSH Challenge 3 | `ssh ctfuser@localhost -p 2224` | *Escalate privileges* |
-
----
-
-## 🎓 Features
-
-### 🐧 SSH Challenges
-
-Three progressive Linux challenges teaching:
-- Command-line navigation
-- File permissions & privilege escalation
-- Flag hunting techniques
-- Basic exploitation
-
-**Example:**
-```bash
-ssh ctfuser@localhost -p 2222
-$ find / -name "flag.txt" 2>/dev/null
-$ cat /root/flag.txt
-FLAG{your_first_flag}
-```
-
-### 🌐 Web Vulnerabilities (OWASP Juice Shop)
-
-Real-world web application with 100+ challenges:
-- 🔑 Authentication bypass
-- 💉 SQL injection
-- 🔓 XSS attacks
-- 🔐 Broken access control
-- 🛒 Business logic flaws
-
-### 🔌 REST API Backend
-
-Flask-based API for challenge management:
-- Challenge CRUD operations
-- User progress tracking
-- JWT authentication (ready for Phase 5)
-- SQLite database
-
-**Example API calls:**
-```bash
-# Get all challenges
-curl http://localhost:5000/api/challenges
-
-# Submit flag
-curl -X POST http://localhost:5000/api/challenges/1/submit \
-  -H "Content-Type: application/json" \
-  -d '{"flag": "FLAG{...}"}'
+# 5. Открыть в браузере
+# Website: http://localhost:3000
+# API: http://localhost:8000/api/status
 ```
 
 ---
 
-## 🏗️ Architecture
+## ✨ Основные возможности
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Docker Compose Network                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Website    │  │   Backend    │  │  Juice Shop  │      │
-│  │  (React 18)  │  │ (Flask/API)  │  │   (Node.js)  │      │
-│  │   Port 3000  │  │   Port 5000  │  │   Port 3001  │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Challenge 1 │  │  Challenge 2 │  │  Challenge 3 │      │
-│  │   (Alpine)   │  │   (Alpine)   │  │   (Alpine)   │      │
-│  │   Port 2222  │  │   Port 2223  │  │   Port 2224  │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Tech Stack
-
-**Frontend:**
-- React 18.2
-- Axios for API calls
-- Nginx for production serving
-
-**Backend:**
-- Python 3.11
-- Flask REST framework
-- SQLite database
-- JWT authentication ready
-
-**Infrastructure:**
-- Docker & Docker Compose
-- Alpine Linux containers
-- OpenSSH Server
-- Multi-stage builds
+- ✅ **Flask REST API Backend** на порту 8000
+- ✅ **Node.js Web Dashboard** на порту 3000
+- ✅ **3 Ubuntu контейнера** для challenges (ch1, ch2, ch3)
+- ✅ **Docker Compose** оркестрация
+- ✅ **Безопасный sandbox** для практического обучения
+- ✅ **Полностью функциональный** MVP
+- ✅ **Готов к production** для локального использования
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Архитектура
+
+### 5 Docker контейнеров
+
+| Контейнер | Тип | Порт | Назначение |
+|-----------|-----|------|-----------|
+| **backend** | Flask API | 8000 | REST API endpoints |
+| **website** | Node.js | 3000 | Web Dashboard |
+| **ch1** | Ubuntu | docker | SSH Challenge 1 |
+| **ch2** | Ubuntu | docker | SSH Challenge 2 |
+| **ch3** | Ubuntu | docker | SSH Challenge 3 |
+
+### Сетевая архитектура
+
+```
+┌─────────────────────────────────────────┐
+│         Docker Network: main            │
+├─────────────────────────────────────────┤
+│                                         │
+│  ┌──────────┐  ┌──────────┐             │
+│  │ Backend  │  │ Website  │             │
+│  │ Flask    │  │ Node.js  │             │
+│  │ :8000    │  │ :3000    │             │
+│  └──────────┘  └──────────┘             │
+│                                         │
+│  ┌──────┐ ┌──────┐ ┌──────┐            │
+│  │ Ch1  │ │ Ch2  │ │ Ch3  │            │
+│  │Ubuntu│ │Ubuntu│ │Ubuntu│            │
+│  │ :22  │ │ :22  │ │ :22  │            │
+│  └──────┘ └──────┘ └──────┘            │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## 📝 Структура проекта
 
 ```
 cyberforge/
-├── 📄 docker-compose.yml          # Orchestration config
-├── 📄 README.md                   # This file
-├── 📄 LICENSE                     # MIT License
-├── 📄 TESTING_CHECKLIST.md        # QA checklist
-├── 📄 package.json                # Frontend dependencies
-│
-├── 🐳 Dockerfile.ch1              # Challenge 1 container
-├── 🐳 Dockerfile.ch2              # Challenge 2 container
-├── 🐳 Dockerfile.ch3              # Challenge 3 container
-│
-├── 🔧 backend/                    # Flask REST API
-│   ├── app.py                     # Main application
-│   ├── models.py                  # Database models
-│   ├── auth.py                    # JWT authentication
-│   ├── config.py                  # Configuration
-│   ├── requirements.txt           # Python dependencies
-│   └── Dockerfile                 # Backend container
-│
-├── 🎨 src/                        # React frontend
-│   ├── App.js                     # Main component
-│   ├── api.js                     # API client
-│   └── components/                # UI components
-│
-├── 🌐 website/                    # Website deployment
-│   └── Dockerfile                 # Frontend container
-│
-├── 🧪 tests/                      # Testing suite
-│   └── health_check.sh            # Automated health checks
-│
-└── 📜 scripts/                    # Utility scripts
-    └── ...
+├── docker-compose.yml       # Конфигурация всех сервисов
+├── README.md                # Этот файл
+├── backend/
+│   ├── Dockerfile           # Docker образ backend
+│   ├── app.py              # Flask приложение
+│   ├── requirements.txt     # Python зависимости
+│   └── .dockerignore
+├── website/
+│   ├── Dockerfile          # Docker образ website
+│   ├── package.json        # Node.js зависимости
+│   ├── app.js              # Express приложение
+│   └── .dockerignore
+└── challenges/
+    ├── ch1/
+    ├── ch2/
+    └── ch3/
 ```
 
 ---
 
-## 🔧 Commands
+## 🚀 Использование
 
-### Managing Services
+### Проверить здоровье сервисов
 
 ```bash
-# Start all services
-docker compose up -d
+# Backend status
+curl http://localhost:8000/api/status
 
-# View status
-docker compose ps
+# Website status
+curl http://localhost:3000/api/status
+```
 
-# View logs
-docker compose logs -f website
-docker compose logs -f backend
-docker compose logs -f juice-shop
+### Просмотр логов
 
-# Stop services
+```bash
+# Все логи в real-time
+docker compose logs -f
+
+# Логи конкретного сервиса
+docker logs cyberforge-backend -f
+docker logs cyberforge-website -f
+```
+
+### Войти в challenge контейнер
+
+```bash
+# SSH access через docker exec
+docker exec -it cyberforge-ch1 bash
+docker exec -it cyberforge-ch2 bash
+docker exec -it cyberforge-ch3 bash
+
+# Пользователь: ctfuser
+# Пароль: ctfpass
+```
+
+### Управление контейнерами
+
+```bash
+# Остановить все
 docker compose down
 
-# Restart single service
-docker compose restart backend
-
-# Rebuild after changes
-docker compose up -d --build
-```
-
-### Testing
-
-```bash
-# Run health checks
-./tests/health_check.sh
-
-# Check individual service
-curl http://localhost:5000/api/health
-
-# SSH connection test
-ssh -o ConnectTimeout=5 ctfuser@localhost -p 2222
-```
-
-### Cleanup
-
-```bash
-# Remove containers and volumes
+# Полная очистка
 docker compose down -v
+docker system prune -af --volumes
 
-# Full system cleanup
-docker system prune -f --volumes
+# Перезагрузить все
+docker compose restart
+
+# Пересобрать образы
+docker compose build --no-cache
 ```
 
 ---
 
-## 🌐 Network Sharing (Demo Mode)
+## 📦 Системные требования
 
-Share CyberForge over WiFi for classroom/demo scenarios:
+| Требование | Минимум | Рекомендуется |
+|-----------|---------|---------------|
+| **RAM** | 4 GB | 8 GB |
+| **Disk** | 5 GB | 10 GB |
+| **CPU** | 2 cores | 4 cores |
+| **OS** | Linux/macOS/Windows (WSL2) | Linux |
 
+### Установка Docker
+
+**Linux:**
 ```bash
-# 1. Find your IP address
-hostname -I  # Linux
-ifconfig | grep inet  # macOS
-
-# 2. Enable WiFi hotspot (optional)
-# Hotspot name: CyberForge-Demo
-
-# 3. Access from other devices
-# Replace 192.168.0.114 with your IP
-ssh ctfuser@192.168.0.114 -p 2222
-# Open http://192.168.0.114:3000 in browser
+sudo apt install docker.io docker-compose
+sudo usermod -aG docker $USER
 ```
+
+**macOS:**
+```bash
+brew install docker
+```
+
+**Windows:**
+Скачать [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ---
 
-## 📚 Documentation
+## 🔄 Фазы разработки
 
-### Challenge Walkthroughs
+### ✅ Phase 1-4 (Завершено - текущее состояние)
 
-**Challenge 1: Basic Reconnaissance**
-```bash
-ssh ctfuser@localhost -p 2222
-# Password: password123
+- ✓ Docker Compose оркестрация
+- ✓ Flask Backend API
+- ✓ Node.js Website
+- ✓ 3 Challenge контейнера
+- ✓ Основная документация
+- ✓ Production ready for local use
 
-# Find the flag
-find / -name "flag.txt" 2>/dev/null
-cat /root/flag.txt
-```
+### 🚧 Phase 5 (В разработке)
 
-**Challenge 2: Password Cracking**
-```bash
-ssh ctfuser@localhost -p 2223
+- [ ] JWT Authentication
+- [ ] User Progress Tracking
+- [ ] SQLite Database
+- [ ] Flag Validation System
 
-# Find weak credentials
-cat /etc/passwd
-# Crack or guess password
-```
+### 📋 Phase 6 (Планируется)
 
-**Challenge 3: Privilege Escalation**
-```bash
-ssh ctfuser@localhost -p 2224
+- [ ] User Dashboard
+- [ ] Leaderboard System
+- [ ] Hint System
+- [ ] Admin Panel
 
-# Find SUID binaries
-find / -perm -4000 2>/dev/null
+### 🔮 Phase 7+ (Будущее)
 
-# Exploit misconfigured permissions
-```
-
-### API Documentation
-
-**Base URL:** `http://localhost:5000/api`
-
-**Endpoints:**
-```
-GET    /api/health              # Health check
-GET    /api/challenges          # List all challenges
-GET    /api/challenges/:id      # Get challenge details
-POST   /api/challenges/:id/submit  # Submit flag
-```
-
-**Example Response:**
-```json
-{
-  "challenges": [
-    {
-      "id": 1,
-      "name": "SSH Challenge 1",
-      "difficulty": "Easy",
-      "points": 100,
-      "description": "Find the flag in the system"
-    }
-  ]
-}
-```
+- [ ] Mobile App (React Native)
+- [ ] Advanced Challenge Types
+- [ ] Team Competitions
+- [ ] Custom Challenge Creator
 
 ---
 
-## 🐛 Troubleshooting
+## 🐛 Решение проблем
 
-### Port Already in Use
+### Ошибка: Port 8000 is already in use
 
 ```bash
-# Find process using port
-sudo lsof -i :3000
-sudo lsof -i :5000
+# Найти и убить процесс
+lsof -i :8000
+kill -9 <PID>
 
-# Kill process or change port in docker-compose.yml
-docker compose down
+# Или изменить порт в docker-compose.yml
+# "8000:8000" → "9000:8000"
+```
+
+### Ошибка: Permission denied
+
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### Контейнеры не запускаются
+
+```bash
+# Полная очистка и перезапуск
+docker compose down -v
+docker system prune -af --volumes
+docker compose build --no-cache
 docker compose up -d
 ```
 
-### Container Won't Start
+### Out of memory
+
+Docker Desktop → Settings → Resources → Memory (установить 6-8 GB)
+
+---
+
+## 📚 Команды управления
 
 ```bash
-# Check logs
-docker compose logs [service-name]
+# Построение
+docker compose build              # Построить образы
+docker compose build --no-cache   # Перестроить без кеша
 
-# Rebuild container
-docker compose up -d --build [service-name]
+# Запуск
+docker compose up -d              # Запустить в фоне
+docker compose start              # Запустить (если stopped)
 
-# Reset everything
-docker compose down -v
-docker system prune -f --volumes
-docker compose up -d
+# Остановка
+docker compose stop               # Остановить (не удалять)
+docker compose down               # Остановить и удалить
+docker compose down -v            # Остановить, удалить + volumes
+
+# Информация
+docker compose ps                 # Статус контейнеров
+docker compose logs               # Просмотр логов
+docker compose logs -f            # Real-time логи
+docker compose restart            # Перезагрузить все
+
+# Работа с контейнерами
+docker exec -it cyberforge-backend bash
+docker exec -it cyberforge-website bash
+docker exec -it cyberforge-ch1 bash
+
+# Очистка
+docker system prune               # Удалить неиспользуемые образы
+docker system prune -a            # Удалить все неиспользуемые
+docker volume prune               # Удалить неиспользуемые volumes
 ```
 
-### SSH Connection Refused
+---
+
+## 🤝 Разработка и вклад
+
+### Git workflow
 
 ```bash
-# Wait for SSH to initialize (30-45 seconds)
-sleep 45
+# 1. Fork репозитория
 
-# Check SSH service status
-docker compose exec challenge1 ps aux | grep sshd
+# 2. Клонировать
+git clone https://github.com/<your-username>/cyberforge.git
+cd cyberforge
 
-# Verify port mapping
+# 3. Создать ветку
+git checkout -b feature/new-feature
+
+# 4. Запустить для разработки
+docker compose up -d
+
+# 5. Внести изменения
+
+# 6. Пересобрать образы
+docker compose build --no-cache
+docker compose up -d
+
+# 7. Commit и push
+git add .
+git commit -m "Feature: Описание изменений"
+git push origin feature/new-feature
+
+# 8. Создать Pull Request
+```
+
+### Перед commit
+
+```bash
+# Проверить логи
+docker compose logs
+
+# Проверить статус
 docker compose ps
-```
 
-### Backend API Not Responding
-
-```bash
-# Check if backend is running
-docker compose ps backend
-
-# View backend logs
-docker compose logs backend
-
-# Restart backend
-docker compose restart backend
+# Проверить API
+curl http://localhost:8000/api/status
+curl http://localhost:3000/api/status
 ```
 
 ---
 
-## 🗺️ Roadmap
+## 🔒 Безопасность
 
-### ✅ Phase 1-4: Complete
-- [x] SSH challenges (3 progressive levels)
-- [x] Backend REST API
-- [x] OWASP Juice Shop integration
-- [x] Testing suite & health checks
+### Текущее состояние (MVP)
 
-### 🚧 Phase 5: Backend Integration (In Progress)
-- [ ] User authentication system
-- [ ] Progress tracking per user
-- [ ] Flag validation logic
-- [ ] Challenge completion stats
+- ⚠️ Нет аутентификации
+- ⚠️ Нет шифрования
+- ⚠️ Debug режим отключен
+- ⚠️ CORS включен (для разработки)
 
-### 📋 Phase 6: Planned
-- [ ] User dashboard with statistics
-- [ ] Leaderboard system
-- [ ] Hint system
-- [ ] Admin panel
+### Рекомендации
 
-### 🔮 Phase 7: Future
-- [ ] Mobile app (React Native)
-- [ ] Additional challenge types
-- [ ] Team competitions
-- [ ] Custom challenge creator
+- НЕ использовать в production без дополнительной безопасности
+- Использовать только в закрытой сети или localhost
+- Регулярно обновлять зависимости
+
+### Будущие улучшения (Phase 5+)
+
+- [ ] JWT токены
+- [ ] HTTPS/TLS
+- [ ] Rate limiting
+- [ ] Input validation
+- [ ] CSRF protection
 
 ---
 
-## 🤝 Contributing
+## 📝 Лицензия
 
-We welcome contributions! Here's how:
+**MIT License**
 
-### Reporting Bugs
-
-Open an issue with:
-- Description of the bug
-- Steps to reproduce
-- Expected vs actual behavior
-- Environment details (OS, Docker version)
-
-### Adding Challenges
-
-1. Fork the repository
-2. Create new Dockerfile for challenge
-3. Add entry to docker-compose.yml
-4. Update README with challenge details
-5. Submit pull request
-
-### Code Contributions
-
-```bash
-# 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/cyberforge.git
-
-# 2. Create feature branch
-git checkout -b feature/your-feature
-
-# 3. Make changes and test
-./tests/health_check.sh
-
-# 4. Commit with clear message
-git commit -m "Add: new challenge for XXX"
-
-# 5. Push and create PR
-git push origin feature/your-feature
-```
-
-**Commit Convention:**
-- `Add:` new features
-- `Fix:` bug fixes
-- `Update:` improvements
-- `Docs:` documentation changes
+Используйте свободно в образовательных целях.
+Указывайте авторство при использовании в своих проектах.
 
 ---
 
-## 📝 License
+## 📞 Контакты и поддержка
 
-MIT License - See [LICENSE](LICENSE) for details.
-
-**Free for educational purposes.** Use responsibly.
-
----
-
-## 🙏 Acknowledgments
-
-- [OWASP Juice Shop](https://owasp.org/www-project-juice-shop/) for web vulnerability training
-- Docker community for containerization best practices
-- React and Flask teams for excellent frameworks
+- **GitHub:** https://github.com/CyberForge-dev-main/cyberforge
+- **Issues:** https://github.com/CyberForge-dev-main/cyberforge/issues
+- **Discussions:** https://github.com/CyberForge-dev-main/cyberforge/discussions
 
 ---
 
-## 📬 Contact
+## 📊 Информация о проекте
 
-- **Issues:** [GitHub Issues](https://github.com/CyberForge-dev-main/cyberforge/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/CyberForge-dev-main/cyberforge/discussions)
-- **Project:** [CyberForge on GitHub](https://github.com/CyberForge-dev-main/cyberforge)
+| Информация | Значение |
+|-----------|----------|
+| **Версия** | 1.0 MVP |
+| **Статус** | Production Ready (Local) |
+| **Лицензия** | MIT |
+| **Язык** | Python (Backend), JavaScript (Frontend) |
+| **Платформа** | Docker & Docker Compose |
+| **Обновлено** | 23 Ноября 2025 |
 
 ---
 
-<div align="center">
+## 🎯 Что дальше?
 
-**⭐ Star this repo if you find it helpful!**
+1. **Запустить:** `docker compose up -d`
+2. **Открыть:** http://localhost:3000
+3. **Изучить:** challenges в ch1, ch2, ch3 контейнерах
+4. **Развивать:** contribute на GitHub
 
-Made with 💙 for the cybersecurity community
-
-</div>
+**Спасибо за использование CyberForge! 🚀**
