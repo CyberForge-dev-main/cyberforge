@@ -147,24 +147,24 @@ cat TESTING_CHECKLIST.md
 
 ```
 cyberforge/
-в”њв”Ђв”Ђ docker-compose.yml
-в”њв”Ђв”Ђ README.md
-в”њв”Ђв”Ђ TESTING_CHECKLIST.md
-в”њв”Ђв”Ђ backend/
-в”‚   в”њв”Ђв”Ђ app.py
-в”‚   в”њв”Ђв”Ђ models.py
-в”‚   в””в”Ђв”Ђ Dockerfile
-в”њв”Ђв”Ђ website/
-в”‚   в””в”Ђв”Ђ Dockerfile
-в”њв”Ђв”Ђ challenges/
-в”‚   в”њв”Ђв”Ђ ch1/
-в”‚   в”‚   в””в”Ђв”Ђ Dockerfile
-в”‚   в”њв”Ђв”Ђ ch2/
-в”‚   в”‚   в””в”Ђв”Ђ Dockerfile
-в”‚   в””в”Ђв”Ђ ch3/
-в”‚       в””в”Ђв”Ђ Dockerfile
-в””в”Ђв”Ђ tests/
-    в””в”Ђв”Ђ health_check.sh
+- docker-compose.yml
+- README.md
+- TESTING_CHECKLIST.md
+- backend/
+  - app.py
+  - models.py
+  - Dockerfile
+- website/
+  - Dockerfile
+- challenges/
+  - ch1/
+    - Dockerfile
+  - ch2/
+    - Dockerfile
+  - ch3/
+    - Dockerfile
+- tests/
+  - health_check.sh
 ```
 
 ---
