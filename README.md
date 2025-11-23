@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # 🛡️ CyberForge
 
@@ -500,4 +500,4 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 Made with 💙 for the cybersecurity community
 
-</div>]]>
+</div>
