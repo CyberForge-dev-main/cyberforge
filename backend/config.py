@@ -1,14 +1,11 @@
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Config:
-    """Base configuration"""
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL',
-        'postgresql://user:password@postgres:5432/cyberforge'
-    )
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    
+    # ИСПРАВЛЕНО: УБРАН os.environ.get('DATABASE_URL')
+    # Хардкод SQLite URI (НЕТ POSTGRESQL)
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///cyberforge.db'
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key-change-in-production')
-    FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
