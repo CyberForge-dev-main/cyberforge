@@ -144,7 +144,7 @@ cat TESTING_CHECKLIST.md
 ---
 
 ## Project Structure
-
+'''
 cyberforge/
 ├── docker-compose.yml
 ├── README.md
@@ -161,7 +161,7 @@ cyberforge/
 │   └── ch3/Dockerfile
 └── tests/
     └── health_check.sh
-
+'''
 ---
 
 ## Network Access (WiFi Demo)
