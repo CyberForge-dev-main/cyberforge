@@ -72,11 +72,11 @@ ssh ctfuser@localhost -p 2224
 
 ## Tech Stack
 
-Backend: Python 3.11 + Flask
-Frontend: React 18 + Nginx
-Vulnerabilities: OWASP Juice Shop
-Orchestration: Docker Compose
-Database: SQLite
+- Backend: Python 3.11 + Flask
+- Frontend: React 18 + Nginx
+- Vulnerabilities: OWASP Juice Shop
+- Orchestration: Docker Compose
+- Database: SQLite
 
 ---
 
@@ -110,22 +110,22 @@ docker system prune -f --volumes
 
 ## How It Works
 
-1. Dashboard (port 3000) - See all available challenges
+1. **Dashboard (port 3000)** - See all available challenges
 
-2. SSH Challenges - Connect and find flags:
+2. **SSH Challenges** - Connect and find flags:
 ```
 ssh ctfuser@localhost -p 2222
 $ find / -name "flag.txt" 2>/dev/null
 $ cat /root/flag.txt
 ```
 
-3. Juice Shop (port 3001) - Exploit web vulnerabilities:
+3. **Juice Shop (port 3001)** - Exploit web vulnerabilities:
    - Admin panel bypass
    - SQL injection
    - XSS attacks
    - Brute force
 
-4. Backend API (port 5000) - Programmatic access to challenge data
+4. **Backend API (port 5000)** - Programmatic access to challenge data
 
 ---
 
@@ -141,28 +141,33 @@ Review test checklist:
 cat TESTING_CHECKLIST.md
 ```
 
-
+---
 
 ## Project Structure
-'''
-cyberforge/
-├── docker-compose.yml
-├── README.md
-├── TESTING_CHECKLIST.md
-├── backend/
-│   ├── app.py
-│   ├── models.py
-│   └── Dockerfile
-├── website/
-│   └── Dockerfile
-├── challenges/
-│   ├── ch1/Dockerfile
-│   ├── ch2/Dockerfile
-│   └── ch3/Dockerfile
-└── tests/
-    └── health_check.sh
-'''
 
+```
+cyberforge/
+в”њв”Ђв”Ђ docker-compose.yml
+в”њв”Ђв”Ђ README.md
+в”њв”Ђв”Ђ TESTING_CHECKLIST.md
+в”њв”Ђв”Ђ backend/
+в”‚   в”њв”Ђв”Ђ app.py
+в”‚   в”њв”Ђв”Ђ models.py
+в”‚   в””в”Ђв”Ђ Dockerfile
+в”њв”Ђв”Ђ website/
+в”‚   в””в”Ђв”Ђ Dockerfile
+в”њв”Ђв”Ђ challenges/
+в”‚   в”њв”Ђв”Ђ ch1/
+в”‚   в”‚   в””в”Ђв”Ђ Dockerfile
+в”‚   в”њв”Ђв”Ђ ch2/
+в”‚   в”‚   в””в”Ђв”Ђ Dockerfile
+в”‚   в””в”Ђв”Ђ ch3/
+в”‚       в””в”Ђв”Ђ Dockerfile
+в””в”Ђв”Ђ tests/
+    в””в”Ђв”Ђ health_check.sh
+```
+
+---
 
 ## Network Access (WiFi Demo)
 
@@ -184,19 +189,19 @@ open http://192.168.0.114:3000
 
 ## Troubleshooting
 
-Port already in use?
+**Port already in use?**
 ```
 docker compose down
 docker system prune -f --volumes
 ```
 
-Container won't start?
+**Container won't start?**
 ```
 docker compose logs backend
 docker compose logs juice-shop
 ```
 
-SSH connection refused?
+**SSH connection refused?**
 ```
 # Wait 30 seconds for SSH to boot
 sleep 30
@@ -207,18 +212,17 @@ ssh ctfuser@localhost -p 2222
 
 ## Next Steps
 
-- Phase 1-4: Complete
+- Phase 1-4: вњ… Complete
 - Phase 5: Full backend integration
 - Phase 6: User accounts & leaderboard
 - Phase 7: Mobile app
 
 ---
 
-License
+## License
 
 MIT License - Use freely for educational purposes.
 
 ---
 
-Questions? Open an issue on GitHub.
-
+**Questions?** Open an issue on GitHub.
