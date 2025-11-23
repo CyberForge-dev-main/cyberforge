@@ -156,3 +156,16 @@ def init_db():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
+@app.route('/api/profile', methods=['GET'])
+@token_required
+def get_profile(current_user):
+    """Get current user profile"""
+    return jsonify({
+        'id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email,
+        'status': 'active'
+    }), 200
+
