@@ -1,161 +1,244 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberForge - Практика кибербезопасности</title>
+    <title>CyberForge - CTF Platform</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Courier New', monospace;
             background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 100%);
-            color: #00ff00;
+            color: #00ff88;
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 20px;
         }
         .container {
-            max-width: 1000px;
-            margin: 0 auto;
+            max-width: 500px;
+            margin: 50px auto;
+            background: rgba(20, 20, 40, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
-        header {
-            text-align: center;
-            margin-bottom: 50px;
-            border-bottom: 2px solid #00ff00;
-            padding-bottom: 20px;
-        }
-        h1 {
-            font-size: 3em;
-            color: #00ffff;
-            text-shadow: 0 0 10px #00ff00;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            color: #ffff00;
-            font-size: 1.2em;
-        }
-        .challenges {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-        .challenge-card {
-            background: rgba(0, 255, 0, 0.05);
-            border: 2px solid #00ff00;
-            border-radius: 5px;
-            padding: 25px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
-        }
-        .challenge-card:hover {
-            background: rgba(0, 255, 0, 0.1);
-            box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
-            transform: translateY(-5px);
-        }
-        .challenge-card h2 {
-            color: #00ffff;
+        h1 { margin-bottom: 30px; text-align: center; font-size: 28px; }
+        .form-group {
             margin-bottom: 15px;
-            font-size: 1.5em;
+            display: none;
         }
-        .challenge-card p {
-            margin-bottom: 15px;
-            line-height: 1.6;
-            color: #90ee90;
-        }
-        .challenge-card code {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 3px;
+        .form-group.active { display: block; }
+        label {
             display: block;
-            margin: 10px 0;
-            color: #ffff00;
-            overflow-x: auto;
-            border-left: 3px solid #00ff00;
-            font-size: 0.9em;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #00ff88;
         }
-        .difficulty {
-            display: inline-block;
-            padding: 5px 10px;
-            background: rgba(255, 255, 0, 0.2);
-            border: 1px solid #ffff00;
-            border-radius: 3px;
+        input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        input:focus { outline: none; box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00ff88;
+            color: #0a0e27;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
             margin-top: 10px;
-            font-size: 0.9em;
-            color: #ffff00;
         }
-        footer {
+        button:hover { background: #00dd77; }
+        .toggle-link {
             text-align: center;
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 2px solid #00ff00;
-            color: #888;
-            font-size: 0.9em;
+            margin-top: 15px;
+            color: #00ff88;
+            cursor: pointer;
+            text-decoration: underline;
         }
-        .info-box {
-            background: rgba(255, 255, 0, 0.05);
-            border-left: 4px solid #ffff00;
+        .toggle-link:hover { color: #00dd77; }
+        .profile { display: none; }
+        .profile.active {
+            display: block;
+            background: rgba(0, 255, 136, 0.1);
             padding: 20px;
-            margin: 30px 0;
-            border-radius: 3px;
+            border-radius: 4px;
+            margin-top: 20px;
         }
-        .info-box strong {
-            color: #ffff00;
+        .profile h2 { margin-bottom: 10px; }
+        .profile p { margin: 5px 0; }
+        .error {
+            color: #ff4444;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 4px;
+            display: none;
         }
+        .error.active { display: block; }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>⚡ CyberForge ⚡</h1>
-            <p class="subtitle">Платформа для практики в кибербезопасности</p>
-        </header>
-
-        <div class="info-box">
-            <strong>📌 Как начать:</strong> Используйте SSH для подключения к челленджам. Найдите флаги и покажите результат!
+        <h1>🔐 CyberForge</h1>
+        
+        <!-- Login Form -->
+        <div id="loginForm" class="form-group active">
+            <label for="loginEmail">Email:</label>
+            <input type="email" id="loginEmail" placeholder="user@example.com" required>
+            
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required>
+            
+            <button onclick="login()">Login</button>
+            <div class="toggle-link" onclick="toggleForms()">Don't have account? Register</div>
         </div>
 
-        <div class="challenges">
-            <div class="challenge-card">
-                <h2>🔐 Челлендж 1: Добро пожаловать</h2>
-                <p>Найдите флаг в домашней директории челленджа</p>
-                <p><strong>Подключение:</strong></p>
-                <code>ssh ctfuser@localhost -p 2222</code>
-                <p><strong>Пароль:</strong> <code>password123</code></p>
-                <p><strong>Команда для поиска:</strong></p>
-                <code>cat ~/challenge/flag.txt</code>
-                <div class="difficulty">Сложность: ⭐ (Базовый)</div>
-            </div>
-
-            <div class="challenge-card">
-                <h2>🔍 Челлендж 2: Скрытые файлы</h2>
-                <p>Найдите скрытый флаг в домашней директории</p>
-                <p><strong>Подключение:</strong></p>
-                <code>ssh ctfuser@localhost -p 2223</code>
-                <p><strong>Пароль:</strong> <code>password123</code></p>
-                <p><strong>Подсказка:</strong></p>
-                <code>ls -la ~/</code>
-                <div class="difficulty">Сложность: ⭐⭐ (Средний)</div>
-            </div>
-
-            <div class="challenge-card">
-                <h2>🎯 Челлендж 3: Поиск в системе</h2>
-                <p>Найдите флаг, используя утилиты поиска</p>
-                <p><strong>Подключение:</strong></p>
-                <code>ssh ctfuser@localhost -p 2224</code>
-                <p><strong>Пароль:</strong> <code>password123</code></p>
-                <p><strong>Подсказка:</strong></p>
-                <code>find ~/ -name "*flag*"</code>
-                <div class="difficulty">Сложность: ⭐⭐⭐ (Продвинутый)</div>
-            </div>
+        <!-- Register Form -->
+        <div id="registerForm" class="form-group">
+            <label for="regUsername">Username:</label>
+            <input type="text" id="regUsername" placeholder="username" required>
+            
+            <label for="regEmail">Email:</label>
+            <input type="email" id="regEmail" placeholder="user@example.com" required>
+            
+            <label for="regPassword">Password:</label>
+            <input type="password" id="regPassword" placeholder="••••••••" required>
+            
+            <button onclick="register()">Register</button>
+            <div class="toggle-link" onclick="toggleForms()">Already have account? Login</div>
         </div>
 
-        <footer>
-            <p>CyberForge MVP | Самохостируемая платформа для обучения кибербезопасности</p>
-        </footer>
+        <!-- Profile -->
+        <div id="profile" class="profile">
+            <h2>👤 Profile</h2>
+            <p><strong>Username:</strong> <span id="profileUsername"></span></p>
+            <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="error"></div>
     </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        function toggleForms() {
+            document.getElementById('loginForm').classList.toggle('active');
+            document.getElementById('registerForm').classList.toggle('active');
+            clearError();
+        }
+
+        function showError(msg) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = msg;
+            errorEl.classList.add('active');
+        }
+
+        function clearError() {
+            document.getElementById('error').classList.remove('active');
+        }
+
+        function showProfile(data) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const profileEl = document.getElementById('profile');
+            
+            loginForm.classList.remove('active');
+            registerForm.classList.remove('active');
+            profileEl.classList.add('active');
+            
+            document.getElementById('profileUsername').textContent = data.username;
+            document.getElementById('profileEmail').textContent = data.email;
+        }
+
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (!username || !email || !password) {
+                showError('All fields required');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showError(data.error || 'Registration failed');
+                    return;
+                }
+
+                localStorage.setItem('token', data.access_token);
+                showProfile({ username, email });
+            } catch (err) {
+                showError('Network error: ' + err.message);
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showError('Email and password required');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showError(data.error || 'Login failed');
+                    return;
+                }
+
+                localStorage.setItem('token', data.access_token);
+                showProfile(data.user);
+            } catch (err) {
+                showError('Network error: ' + err.message);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('profile').classList.remove('active');
+            clearError();
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        // Auto-restore session on page load
+        window.onload = function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // TODO: Fetch user data with token
+                // For now, just show logout button would be added
+            }
+        };
+    </script>
 </body>
 </html>
