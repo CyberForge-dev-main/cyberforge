@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/23833481/README.md)
+
 # CyberForge
 
 Self-hosted cybersecurity training platform with isolated sandbox environments and automated flag validation.
