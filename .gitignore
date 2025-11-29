@@ -33,3 +33,16 @@ Thumbs.db
 *.log
 logs/
 backend/cyberforge.db
+
+# Backup files
+*.bak
+*.backup
+*.broken_*
+
+# Quick fix scripts
+*_quick_fix*.sh
+fix_*.py
+
+# Archive directories
+archive/old_challenges_*/
+archive/old_challenges_backup/
