@@ -1,489 +1,490 @@
+[README.md](https://github.com/user-attachments/files/23833481/README.md)
 # CyberForge
 
-**Самостоятельная платформа для обучения кибербезопасности на Docker**
+Self-hosted cybersecurity training platform with isolated sandbox environments and automated flag validation.
 
-> Практическое обучение кибербезопасности в полностью изолированной Docker среде. Запусти локально, изучай вызовы и развивайся без рисков.
+## Overview
 
----
+CyberForge provides a containerized infrastructure for hands-on cybersecurity practice. The platform includes multiple challenge types running in isolated Docker containers, an HTTP API for challenge management and scoring, and a web interface for user interaction.
 
-## Быстрый старт
+### Key Characteristics
+
+- **Self-hosted deployment** - Complete control over infrastructure and data
+- **Container isolation** - Each challenge runs in its own Docker container with restricted permissions
+- **Modular architecture** - Add or remove challenges independently
+- **Local execution** - No external dependencies or cloud connectivity required
+- **SQLite backend** - Lightweight persistence without additional database services
+
+## Quick Start
+
+### Prerequisites
+
+- Docker and docker-compose installed
+- Port availability: 3000, 5000, 2222-2224
+- 4GB RAM minimum, 8GB recommended
+
+### Installation
 
 ```bash
-# Клонировать репозиторий
 git clone https://github.com/CyberForge-dev-main/cyberforge.git
 cd cyberforge
+docker compose up --build -d
+```
 
-# Запустить все контейнеры
-docker compose up -d
+Deployment verification:
 
-# Подождать инициализации
-sleep 45
-
-# Проверить статус
+```bash
+# Check container status
 docker compose ps
 
-# Открыть в браузере
-# http://localhost:3000  — Веб-интерфейс
-# http://localhost:8000  — REST API
+# Verify API endpoint
+curl http://localhost:5000/api/health
+
+# Access web interface
+http://localhost:3000
 ```
 
----
+Wait 30 seconds for service initialization before accessing the interface.
 
-## Основные возможности
+## System Architecture
 
-- **Flask REST API** на порту 8000 с поддержкой CORS
-- **Node.js Web Dashboard** на порту 3000 для управления
-- **3 изолированных Ubuntu контейнера** для практических задач
-- **SSH доступ** к каждому challenge контейнеру
-- **Docker Compose** оркестрация для простого развёртывания
+### Component Overview
 
----
-
-## Архитектура системы
-
-### Пять Docker контейнеров
-
-| Контейнер | Тип | Порт | Назначение |
-|-----------|-----|------|-----------|
-| backend | Flask API | 8000 | REST API для управления |
-| website | Node.js | 3000 | Веб-интерфейс пользователя |
-| ch1 | Ubuntu 22.04 | SSH | Первое практическое задание |
-| ch2 | Ubuntu 22.04 | SSH | Второе практическое задание |
-| ch3 | Ubuntu 22.04 | SSH | Третье практическое задание |
-
-### Сетевая топология
+The system consists of four primary components communicating through a Docker internal network:
 
 ```
-┌──────────────────────────────────────────┐
-│       Docker Network (cyberforge)                │
-├──────────────────────────────────────────┤
-│                                                  │
-│  ┌────────────┐      ┌────────────┐         │
-│  │  Backend      │      │  Website     │         │
-│  │  Flask        │      │  Node.js     │         │
-│  │  :8000        │      │  :3000       │         │
-│  └────────────┘      └────────────┘         │
-│                                                  │
-│       ┌──────┐  ┌──────┐  ┌──────┐           │
-│        │ ch1  │   │ ch2  │   │  ch3  │           │
-│        │Ubuntu│   │Ubuntu│   │Ubuntu │           │
-│        │ :22  │   │ :22  │   |  :22  │           │
-│       └──────┘  └──────┘  └──────┘           │
-│                                                  │
-└──────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│        User Browser                     │
+│    (http://localhost:3000)              │
+└────────────────┬────────────────────────┘
+                 │
+    ┌────────────┼────────────┐
+    │            │            │
+┌───▼────┐  ┌───▼─────┐  ┌──▼──────┐
+│Frontend│  │ Backend │  │Challenges│
+│:3000   │  │:5000    │  │:2222-2224│
+└────────┘  └─────────┘  └──────────┘
+                 │
+           ┌─────▼─────┐
+           │  SQLite   │
+           │   DB      │
+           └───────────┘
 ```
 
----
+### Data Flow for Challenge Submission
 
-## Использование платформы
+1. User submits flag through web interface (HTTP POST to `/api/submit`)
+2. Backend receives submission and queries challenge metadata from SQLite
+3. Backend compares submitted flag with stored value
+4. Result persisted to database (flag_submissions table)
+5. User progress updated (points awarded if correct)
+6. Response returned to frontend for display
 
-### Проверка здоровья сервисов
+### Port Mapping
 
-```bash
-# Проверить Backend API
-curl http://localhost:8000/api/status
+| Component | Port | Protocol | Purpose |
+|-----------|------|----------|---------|
+| Frontend | 3000 | HTTP | Web interface |
+| Backend API | 5000 | HTTP | REST endpoints |
+| SSH Challenge 1 | 2222 | SSH | Interactive shell environment |
+| SSH Challenge 2 | 2223 | SSH | Interactive shell environment |
+| SSH Challenge 3 | 2224 | SSH | Interactive shell environment |
 
-# Проверить Website
-curl http://localhost:3000/api/status
-```
-
-### Просмотр логов
-
-```bash
-# Все логи в реальном времени
-docker compose logs -f
-
-# Логи конкретного сервиса
-docker logs cyberforge-backend -f
-docker logs cyberforge-website -f
-docker logs cyberforge-ch1 -f
-```
-
-### Доступ к challenge контейнерам
-
-```bash
-# Войти в challenge контейнер
-docker exec -it cyberforge-ch1 bash
-docker exec -it cyberforge-ch2 bash
-docker exec -it cyberforge-ch3 bash
-
-# Учётные данные (если требуются)
-# Пользователь: ctfuser
-# Пароль: ctfpass
-```
-
-### Управление контейнерами
-
-```bash
-# Остановить все контейнеры
-docker compose down
-
-# Перезагрузить все
-docker compose restart
-
-# Пересобрать образы
-docker compose build --no-cache
-
-# Полная очистка (удалить данные)
-docker compose down -v
-docker system prune -af --volumes
-```
-
----
-
-## Системные требования
-
-### Минимальные требования
-
-| Компонент | Значение |
-|-----------|----------|
-| RAM | 4 GB |
-| Disk | 5 GB |
-| CPU | 2 ядра |
-| ОС | Linux, macOS или Windows (WSL2) |
-
-### Рекомендуемая конфигурация
-
-| Компонент | Значение |
-|-----------|----------|
-| RAM | 8 GB |
-| Disk | 10 GB |
-| CPU | 4 ядра |
-| ОС | Linux |
-
-### Установка Docker
-
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt update
-sudo apt install docker.io docker-compose
-sudo usermod -aG docker $USER
-newgrp docker
-```
-
-**macOS:**
-```bash
-brew install docker
-# Запустить Docker Desktop
-open /Applications/Docker.app
-```
-
-**Windows:**
-Скачать [Docker Desktop для Windows](https://www.docker.com/products/docker-desktop)
-
----
-
-## Структура проекта
+## Project Structure
 
 ```
 cyberforge/
-├── docker-compose.yml       # Конфигурация контейнеров
-├── README.md                # Документация (этот файл)
-├── backend/
-│   ├── Dockerfile           # Docker образ backend
-│   ├── app.py              # Flask приложение
-│   ├── requirements.txt     # Зависимости Python
-│   └── .dockerignore        # Исключения для Docker
-├── website/
-│   ├── Dockerfile          # Docker образ website
-│   ├── package.json        # Зависимости Node.js
-│   ├── app.js              # Express приложение
-│   └── .dockerignore       # Исключения для Docker
-└── challenges/
-    ├── ch1/                # Первое задание
-    ├── ch2/                # Второе задание
-    └── ch3/                # Третье задание
+├── backend/                    # Flask API service
+│   ├── app.py                 # Application entry point
+│   ├── config.py              # Configuration settings (SQLite)
+│   ├── models.py              # Database ORM models
+│   ├── auth.py                # JWT authentication logic
+│   ├── requirements.txt        # Python dependencies
+│   └── Dockerfile             # Container image definition
+│
+├── website/                    # Frontend web interface
+│   ├── index.html             # HTML markup
+│   ├── app.js                 # React application
+│   ├── components/            # React component modules
+│   └── Dockerfile             # Container image definition
+│
+├── challenges/                 # SSH challenge environments
+│   ├── ch1/Dockerfile         # Challenge 1 image
+│   ├── ch2/Dockerfile         # Challenge 2 image
+│   └── ch3/Dockerfile         # Challenge 3 image
+│
+├── tests/                      # Functional test suite
+│   ├── test_api.sh            # API integration tests
+│   └── test_ssh.sh            # SSH connection validation
+│
+├── docker-compose.yml         # Service orchestration
+├── README.md                  # This file
+└── .gitignore                 # Git exclusion rules
 ```
 
----
+## API Reference
 
-## Полные команды управления
+### Authentication
 
-### Построение и запуск
+All requests except `/api/health` and `/api/register` require JWT token in Authorization header:
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+### Endpoints
+
+#### Health Check
+```
+GET /api/health
+```
+Returns service status.
+
+#### User Registration
+```
+POST /api/register
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "email": "user@example.com",
+  "password": "secure_password"
+}
+```
+
+#### User Login
+```
+POST /api/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "secure_password"
+}
+```
+Returns JWT token for subsequent requests.
+
+#### List Challenges
+```
+GET /api/challenges
+Authorization: Bearer <token>
+```
+Returns array of available challenges with metadata.
+
+#### Submit Flag
+```
+POST /api/submit
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "challenge_id": 1,
+  "flag": "flag{...}"
+}
+```
+Returns validation result and points awarded.
+
+#### Leaderboard
+```
+GET /api/leaderboard
+Authorization: Bearer <token>
+```
+Returns ranked list of users by points.
+
+## Challenge Environments
+
+### SSH Challenge Access
 
 ```bash
-# Построить все образы
-docker compose build
+ssh -p 2222 ctfuser@localhost          # Challenge 1
+ssh -p 2223 ctfuser@localhost          # Challenge 2
+ssh -p 2224 ctfuser@localhost          # Challenge 3
 
-# Построить без кеша
-docker compose build --no-cache
+# Default credentials (if required)
+# Password: ctfpass
+```
 
-# Запустить в фоне
+### Challenge Structure
+
+Each challenge container provides:
+- Limited user account with restricted permissions
+- Task description in `/home/ctfuser/README`
+- Target objective requiring investigation and problem-solving
+- Flag stored in hidden location
+
+Example challenge flow:
+1. Connect via SSH
+2. Read task description
+3. Investigate file system and process environment
+4. Locate and extract flag
+5. Submit flag through web interface
+
+## Database Schema
+
+### Users Table
+```sql
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Challenges Table
+```sql
+CREATE TABLE challenges (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    flag VARCHAR(255) NOT NULL,
+    points INTEGER DEFAULT 100,
+    difficulty INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### User Progress Table
+```sql
+CREATE TABLE user_progress (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    challenge_id INTEGER NOT NULL,
+    solved BOOLEAN DEFAULT FALSE,
+    points_earned INTEGER,
+    solved_at TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(challenge_id) REFERENCES challenges(id)
+);
+```
+
+## Operational Commands
+
+### Service Management
+
+```bash
+# Start all services
 docker compose up -d
 
-# Запустить в терминале (видеть логи)
-docker compose up
+# Stop all services
+docker compose down
 
-# Запустить конкретный сервис
-docker compose up -d backend
-docker compose up -d website
+# View service logs
+docker compose logs [service_name]
+
+# View logs in real-time
+docker compose logs -f
+
+# Restart specific service
+docker compose restart backend
 ```
 
-### Управление контейнерами
+### Container Access
 
 ```bash
-# Показать статус контейнеров
-docker compose ps
+# Execute command in container
+docker exec <container_name> <command>
 
-# Показать статус с размерами
+# Interactive shell access
+docker exec -it <container_name> bash
+
+# View container resource usage
 docker compose ps -s
-
-# Остановить конкретный сервис
-docker compose stop backend
-
-# Перезагрузить конкретный сервис
-docker compose restart website
-
-# Удалить сервис (но не данные)
-docker compose down
 ```
 
-### Просмотр информации
+### Database Operations
 
 ```bash
-# Все логи
-docker compose logs
+# Access SQLite database
+docker exec -it cyberforge-backend sqlite3 cyberforge.db
 
-# Логи последних 100 строк
-docker compose logs --tail=100
+# Dump database schema
+docker exec cyberforge-backend sqlite3 cyberforge.db .schema
 
-# Логи в реальном времени
-docker compose logs -f
-
-# Логи конкретного контейнера
-docker logs cyberforge-backend
-
-# Статистика ресурсов
-docker stats
-```
-
-### Очистка и удаление
-
-```bash
-# Удалить остановленные контейнеры
-docker compose down
-
-# Удалить контейнеры и volume данные
+# Reset database (destructive)
 docker compose down -v
-
-# Удалить неиспользуемые образы
-docker system prune
-
-# Удалить все неиспользуемые образы (осторожно!)
-docker system prune -a
-
-# Удалить неиспользуемые volume
-docker volume prune
+docker compose up --build
 ```
 
----
+## Troubleshooting
 
-## Этапы разработки
+### Service Fails to Start
 
-### Этап 1-4 (Завершено - текущее состояние MVP)
+**Symptom:** `Connection refused` on port 5000
 
-- ✅ Полная Docker Compose оркестрация
-- ✅ Flask REST API Backend
-- ✅ Node.js Web Dashboard
-- ✅ Три изолированные challenge среды
-- ✅ Полная документация
-- ✅ Production ready для локального использования
-
-### Этап 5 (В разработке)
-
-- ⬜ JWT аутентификация и авторизация
-- ⬜ Отслеживание прогресса пользователя
-- ⬜ Интеграция SQLite базы данных
-- ⬜ Система проверки флагов
-
-### Этап 6 (Планируется)
-
-- ⬜ Личный кабинет пользователя
-- ⬜ Таблица лидеров (leaderboard)
-- ⬜ Система подсказок для задач
-- ⬜ Админ-панель управления
-
-### Этап 7+ (Будущее)
-
-- ⬜ Мобильное приложение на React Native
-- ⬜ Продвинутые типы заданий
-- ⬜ Командные соревнования
-- ⬜ Конструктор собственных задач
-
----
-
-## Часто встречающиеся проблемы
-
-### Ошибка: Port 8000 is already in use
-
+**Diagnosis:**
 ```bash
-# Найти процесс на порту
-lsof -i :8000
-
-# Завершить процесс
-kill -9 <PID>
-
-# Или изменить порт в docker-compose.yml
-# "8000:8000" → "9000:8000"
+docker compose logs backend
 ```
 
-### Ошибка: Permission denied while trying to connect to Docker daemon
+**Resolution:**
+1. Verify `config.py` contains `sqlite:///cyberforge.db`
+2. Check Docker daemon is running: `docker ps`
+3. Rebuild containers: `docker compose down -v && docker compose up --build`
+
+### SSH Connection Timeout
+
+**Symptom:** `ssh: connect to host localhost port 2222: Connection refused`
+
+**Diagnosis:**
+```bash
+docker compose ps | grep challenge
+```
+
+**Resolution:**
+1. Verify challenge containers are running
+2. Check port forwarding: `docker port cyberforge-ch1`
+3. Wait 5-10 seconds for container initialization
+
+### Database Connection Error
+
+**Symptom:** `DatabaseError: Unable to open database file`
+
+**Resolution:**
+1. Verify database path in `config.py`
+2. Check file permissions: `docker exec cyberforge-backend ls -la cyberforge.db`
+3. Reset database: `docker compose down -v && docker compose up --build`
+
+### CORS Errors in Browser Console
+
+**Symptom:** `Access to XMLHttpRequest blocked by CORS policy`
+
+**Resolution:**
+1. Verify CORS middleware enabled in `backend/app.py`
+2. Check API URL in frontend matches deployment (typically `http://localhost:5000`)
+3. Restart backend: `docker compose restart backend`
+
+## Testing
+
+Run functional test suite:
 
 ```bash
+# Navigate to test directory
+cd tests
+
+# Execute API tests
+bash test_api.sh
+
+# Execute SSH connectivity tests
+bash test_ssh.sh
+```
+
+Tests verify:
+- API endpoints responsive
+- Database connectivity
+- SSH challenge accessibility
+- Flag validation logic
+- User authentication flow
+
+## System Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| RAM | 4 GB | 8 GB |
+| Storage | 5 GB | 10 GB |
+| Disk I/O | 50 MB/s | 100+ MB/s |
+| CPU Cores | 2 | 4+ |
+| Operating System | Linux, macOS, Windows (WSL2) | Linux |
+
+## Installation for Specific Platforms
+
+### Linux (Ubuntu 20.04+)
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker.io docker-compose
 sudo usermod -aG docker $USER
+# Log out and back in for group changes to take effect
 newgrp docker
-# Перезагрузить систему или переподключиться
 ```
 
-### Контейнеры не запускаются
+### macOS
 
 ```bash
-# Полная очистка и новый старт
-docker compose down -v
-docker system prune -af --volumes
-docker compose build --no-cache
-docker compose up -d
+# Install using Homebrew
+brew install docker docker-compose
+
+# Or download Docker Desktop
+# https://www.docker.com/products/docker-desktop
 ```
 
-### Недостаточно памяти (Out of memory)
-
-В Docker Desktop:
-- Нажать Settings → Resources
-- Установить Memory на 6-8 GB
-- Установить Swap на 2 GB
-
----
-
-## Разработка и вклад в проект
-
-### Git workflow
+### Windows (WSL2)
 
 ```bash
-# 1. Сделать fork репозитория на GitHub
+# Install WSL2
+wsl --install
 
-# 2. Клонировать свой fork
-git clone https://github.com/<ваше-имя>/cyberforge.git
-cd cyberforge
+# Install Docker Desktop with WSL2 backend
+# https://www.docker.com/products/docker-desktop
 
-# 3. Создать ветку для фичи
-git checkout -b feature/название-фичи
-
-# 4. Запустить для разработки
-docker compose up -d
-
-# 5. Внести изменения в код
-
-# 6. Пересобрать образы (если изменили код)
-docker compose build --no-cache
-docker compose up -d
-
-# 7. Протестировать изменения
-docker compose logs -f
-
-# 8. Commit и push
-git add .
-git commit -m "Feature: Описание изменений"
-git push origin feature/название-фичи
-
-# 9. Создать Pull Request на GitHub
+# Verify from PowerShell
+wsl docker ps
 ```
 
-### Перед commit
+## Development Workflow
+
+### Making Code Changes
 
 ```bash
-# Проверить все логи
-docker compose logs
+# Edit source files in local directory
+vim backend/app.py
 
-# Проверить статус всех контейнеров
-docker compose ps
+# Rebuild affected containers
+docker compose up --build -d service_name
 
-# Проверить API endpoints
-curl http://localhost:8000/api/status
-curl http://localhost:3000/api/status
-
-# Проверить работу всех сервисов
-docker compose restart
-sleep 30
-docker compose ps
+# View logs for verification
+docker compose logs -f service_name
 ```
 
----
+### Adding New Challenges
 
-## Безопасность
+1. Create directory: `mkdir -p challenges/ch4`
+2. Create `Dockerfile` with challenge environment
+3. Update `docker-compose.yml` with new service definition
+4. Insert challenge metadata into database
+5. Rebuild: `docker compose up --build`
 
-### Текущее состояние
+### Modifying Database Schema
 
-⚠️ **Важно для разработки:**
+1. Stop services: `docker compose down`
+2. Update `models.py` with new schema
+3. Reset database: `docker compose down -v`
+4. Rebuild: `docker compose up --build`
+5. Verify schema: `docker exec cyberforge-backend sqlite3 cyberforge.db .schema`
 
-- Нет аутентификации пользователей
-- Нет шифрования данных
-- CORS включен для всех источников
-- Debug режим отключен в production
+## Security Considerations
 
-### Рекомендации по использованию
+- Credentials stored as bcrypt hashes in database
+- JWT tokens expire after configurable duration
+- SSH challenge containers run with minimal privileges
+- Database file permission restricted to container user
+- No plain-text secrets in configuration files
 
-- **Только для локального использования**
-- **Не используйте в интернете без дополнительной безопасности**
-- **Используйте только в закрытых сетях**
-- **Регулярно обновляйте зависимости**
+## Performance Optimization
 
-```bash
-# Проверить уязвимости в зависимостях
-pip check                    # Python
-npm audit                    # Node.js
-```
+- Challenge containers allocate limited resources to prevent resource exhaustion
+- SQLite appropriate for deployment patterns with <100 concurrent users
+- Consider PostgreSQL for larger deployments (requires code modification)
+- Static asset caching configured on frontend service
 
-### Будущие улучшения безопасности
+## License
 
-- JWT токены и сессии
-- HTTPS/TLS шифрование
-- Rate limiting на endpoints
-- Input validation
-- CSRF protection
-- Регулярные security audits
+MIT License - See repository for details
 
----
+## Contributing
 
-## Лицензия
+Report issues on GitHub repository issue tracker. Contributions accepted via pull request.
 
-**MIT License**
+## Related Resources
 
-Используйте этот проект свободно в образовательных целях.
-
-Обязательно указывайте авторство при использовании в своих проектах:
-```
-CyberForge - https://github.com/CyberForge-dev-main/cyberforge
-```
+- Docker documentation: https://docs.docker.com
+- Flask API framework: https://flask.palletsprojects.com
+- React frontend library: https://react.dev
+- SQLite database: https://www.sqlite.org
 
 ---
 
-## Контакты и поддержка
-
-- **GitHub репозиторий:** https://github.com/CyberForge-dev-main/cyberforge
-- **Issues и ошибки:** https://github.com/CyberForge-dev-main/cyberforge/issues
-- **Обсуждения проекта:** https://github.com/CyberForge-dev-main/cyberforge/discussions
-
----
-
-## Информация о проекте
-
-| Параметр | Значение |
-|----------|----------|
-| Версия | 1.0 MVP |
-| Статус | Production Ready (локально) |
-| Лицензия | MIT |
-| Язык Backend | Python 3.11+ |
-| Язык Frontend | JavaScript (Node.js) |
-| Платформа | Docker & Docker Compose |
-| Дата обновления | 23 ноября 2025 |
-| Поддержка ОС | Linux, macOS, Windows (WSL2) |
-
-
-
----
-
-## Благодарности
-
-Спасибо за использование CyberForge! Успехов в изучении кибербезопасности! 🚀
-
-Если найдёшь ошибку или есть идеи улучшения — создай Issue!
+**Current Version:** 2.0  
+**Last Updated:** 2025-11-29  
+**Status:** Stable
