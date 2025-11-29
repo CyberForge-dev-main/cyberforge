@@ -21,10 +21,10 @@ def authenticate_user(username, password):
     if not user or not user.check_password(password):
         return None, "Invalid credentials"
     
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
     return user, access_token
 
 def get_current_user():
     """Получить текущего пользователя из JWT токена"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     return User.query.get(user_id)

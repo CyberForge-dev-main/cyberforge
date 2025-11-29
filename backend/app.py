@@ -98,22 +98,25 @@ def get_challenges():
     } for c in challenges]), 200
 
 @app.route('/api/leaderboard', methods=['GET'])
+@app.route("/api/leaderboard", methods=["GET"])
+
+@jwt_required()
+
 def get_leaderboard():
-    leaderboard = db.session.query(
-        User.username,
-        db.func.count(Submission.id).label('solved'),
-        db.func.sum(Challenge.points).label('total_points')
-    ).join(Submission).join(Challenge).filter(
-        Submission.is_correct == True
-    ).group_by(User.id).order_by(
-        db.func.sum(Challenge.points).desc()
-    ).all()
-    
-    return jsonify([{
-        'username': row[0],
-        'solved': row[1],
-        'points': row[2] or 0
-    } for row in leaderboard]), 200
+
+    users = User.query.all()
+
+    result = []
+
+    for user in users:
+
+        correct = Submission.query.filter_by(user_id=user.id, is_correct=True).all()
+
+        points = sum(Challenge.query.get(s.challenge_id).points for s in correct if Challenge.query.get(s.challenge_id))
+
+        result.append({"username": user.username, "solved": len(correct), "points": points})
+
+    return jsonify(sorted(result, key=lambda x: x["points"], reverse=True)), 200
 
 @app.route('/api/user/progress', methods=['GET'])
 @jwt_required()
