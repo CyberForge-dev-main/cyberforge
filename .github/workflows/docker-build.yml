@@ -14,13 +14,13 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Build Challenge 1
-      run: docker build -f Dockerfile.ch1 -t cyberforge-ch1 .
+      run: docker build -f challenges/ch1/Dockerfile -t cyberforge-ch1 .
       
     - name: Build Challenge 2
-      run: docker build -f Dockerfile.ch2 -t cyberforge-ch2 .
+      run: docker build -f challenges/ch2/Dockerfile -t cyberforge-ch2 .
       
     - name: Build Challenge 3
-      run: docker build -f Dockerfile.ch3 -t cyberforge-ch3 .
+      run: docker build -f challenges/ch3/Dockerfile -t cyberforge-ch3 .
       
     - name: Build Backend
       run: docker build -f backend/Dockerfile -t cyberforge-backend ./backend
