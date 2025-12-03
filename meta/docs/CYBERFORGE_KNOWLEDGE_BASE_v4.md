@@ -1,4 +1,4 @@
-CyberForge Knowledge Base v4.0
+	CyberForge Knowledge Base v4.0
 
 Last Updated: 2025-12-03
 Status: Production-Verified

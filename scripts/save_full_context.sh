@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+OUT_DIR="./snapshots"
+OUT_FILE="${OUT_DIR}/context_snapshot_FULL.txt"
+mkdir -p "$OUT_DIR"
+{
+  echo "========================================"
+  echo "CyberForge FULL Context Snapshot"
+  echo "TIMESTAMP: $(date -Iseconds)"
+  echo "PWD: $(pwd)"
+  echo ""
+  echo "=== GIT ==="
+  echo "\$ git branch --show-current"
+  git branch --show-current 2>/dev/null || echo "no-branch"
+  echo ""
+  echo "\$ git log --oneline -5"
+  git log --oneline -5 2>/dev/null || echo "no-commits"
+  echo ""
+  echo "\$ git status --short"
+  git status --short 2>/dev/null || echo "no-status"
+  echo ""
+  echo "=== FILE TREE (filtered) ==="
+  find . -maxdepth 5 -type f ! -path './.git/*' ! -path './venv/*' ! -path './node_modules/*'
+  echo ""
+  echo "=== DOCKER ==="
+  echo "\$ docker-compose ps"
+  docker-compose ps 2>/dev/null || echo "docker-compose ps failed"
+  echo ""
+  echo "=== BACKEND HEALTH ==="
+  echo "\$ curl -s http://localhost:5000/api/health | jq ."
+  curl -s http://localhost:5000/api/health | jq . 2>/dev/null || echo "health check failed"
+  echo ""
+  echo "=== CHALLENGES COUNT ==="
+  echo "\$ curl -s http://localhost:5000/api/challenges | jq '. | length'"
+  curl -s http://localhost:5000/api/challenges | jq '. | length' 2>/dev/null || echo "challenges check failed"
+  echo ""
+  echo "=== LAST TEST OUTPUT (if exists) ==="
+  if [ -f ./last_test_output.log ]; then
+    echo "# tail -40 last_test_output.log"
+    tail -40 ./last_test_output.log
+  else
+    echo "no last_test_output.log"
+  fi
+  echo ""
+} > "$OUT_FILE"
+echo "✅ Full context snapshot saved to: $OUT_FILE"
