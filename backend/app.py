@@ -5,6 +5,30 @@ from config import Config
 from models import db, User, Challenge, Submission
 from auth import register_user, authenticate_user, get_current_user
 
+from time import time
+
+# Simple in-memory rate limiting for /api/submit_flag
+RATE_LIMIT_WINDOW = 60        # seconds
+RATE_LIMIT_MAX = 10           # max attempts per window per user
+_rate_buckets = {}            # user_id -> [timestamps]
+
+
+def is_rate_limited(user_id: int) -> bool:
+    now = time()
+    bucket = _rate_buckets.get(user_id, [])
+
+    # keep only attempts in current window
+    bucket = [t for t in bucket if now - t < RATE_LIMIT_WINDOW]
+
+    if len(bucket) >= RATE_LIMIT_MAX:
+        _rate_buckets[user_id] = bucket
+        return True
+
+    bucket.append(now)
+    _rate_buckets[user_id] = bucket
+    return False
+
+
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -59,6 +83,15 @@ def login():
 @jwt_required()
 def submit_flag():
     user = get_current_user()
+
+    # Rate limiting per user
+    if is_rate_limited(user.id):
+        return jsonify({
+            'success': False,
+            'message': 'Too many attempts. Please try again later.'
+        }), 429
+
+
     data = request.get_json()
     
     if not data or not data.get('challenge_id') or not data.get('flag'):
