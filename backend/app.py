@@ -9,7 +9,7 @@ from time import time
 
 # Simple in-memory rate limiting for /api/submit_flag
 RATE_LIMIT_WINDOW = 60        # seconds
-RATE_LIMIT_MAX = 10           # max attempts per window per user
+RATE_LIMIT_MAX = 5           # max attempts per window per user
 _rate_buckets = {}            # user_id -> [timestamps]
 
 
