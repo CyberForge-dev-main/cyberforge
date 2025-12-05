@@ -28,3 +28,18 @@ def get_current_user():
     """Получить текущего пользователя из JWT токена"""
     user_id = int(get_jwt_identity())
     return User.query.get(user_id)
+
+def token_required(f):
+    """Декоратор для защиты эндпоинтов, требующих JWT токен"""
+    from functools import wraps
+    from flask import request, jsonify
+    from flask_jwt_extended import verify_jwt_in_request
+    
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        try:
+            verify_jwt_in_request()
+        except Exception as e:
+            return jsonify({'error': 'Invalid or missing token'}), 401
+        return f(*args, **kwargs)
+    return decorated

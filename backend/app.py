@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required
 from config import Config
 from models import db, User, Challenge, Submission
-from auth import register_user, authenticate_user, get_current_user
+from auth import register_user, authenticate_user, get_current_user, token_required
 
 from time import time
 
@@ -39,26 +39,34 @@ CORS(app)
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'OK', 'message': 'Backend is running'}), 200
-
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
-    
-    if not data or not data.get('username') or not data.get('email') or not data.get('password'):
+
+    # Минимальная проверка
+    if not data or not data.get('username') or not data.get('password'):
         return jsonify({'error': 'Missing required fields'}), 400
-    
+
+    username = data['username']
+    email = data.get('email', f"{username}@example.local")
+    password = data['password']
+
     user, error = register_user(
-        username=data['username'],
-        email=data['email'],
-        password=data['password']
+        username=username,
+        email=email,
+        password=password
     )
-    
+
     if error:
         return jsonify({'error': error}), 400
-    
+
     return jsonify({
         'message': 'User registered successfully',
-        'user': {'id': user.id, 'username': user.username, 'email': user.email}
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email
+        }
     }), 201
 
 @app.route('/api/login', methods=['POST'])
