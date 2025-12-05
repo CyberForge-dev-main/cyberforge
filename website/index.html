@@ -14,7 +14,6 @@
         }
         .hidden { display: none !important; }
         
-        /* Header */
         header {
             background: rgba(0,0,0,0.3);
             padding: 15px 30px;
@@ -27,7 +26,6 @@
         header .user-info { display: flex; align-items: center; gap: 15px; }
         header .user-info span { color: #aaa; }
         
-        /* Buttons */
         .btn {
             background: #00d4ff;
             color: #000;
@@ -41,10 +39,7 @@
         .btn:hover { background: #00a8cc; }
         .btn-danger { background: #ff4757; color: #fff; }
         .btn-danger:hover { background: #ff3344; }
-        .btn-secondary { background: #444; color: #fff; }
-        .btn-secondary:hover { background: #555; }
         
-        /* Auth Container */
         .auth-container {
             max-width: 400px;
             margin: 100px auto;
@@ -108,14 +103,12 @@
             text-align: center;
         }
         
-        /* Main Content */
         .main-content {
             max-width: 1200px;
             margin: 0 auto;
             padding: 30px;
         }
         
-        /* Stats Bar */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -132,7 +125,6 @@
         .stat-card h3 { color: #00d4ff; font-size: 2em; margin-bottom: 5px; }
         .stat-card p { color: #aaa; }
         
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 10px;
@@ -155,7 +147,6 @@
             color: #00d4ff;
         }
         
-        /* Challenges Grid */
         .challenges-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -172,8 +163,38 @@
             border-color: #00d4ff;
             transform: translateY(-2px);
         }
-        .challenge-card h3 { color: #fff; margin-bottom: 10px; }
-        .challenge-card p { color: #aaa; margin-bottom: 15px; }
+        .challenge-card.solved {
+            border-color: #2ed573;
+            background: rgba(46,213,115,0.1);
+        }
+        .challenge-card h3 { 
+            color: #fff; 
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .challenge-card p { color: #aaa; margin-bottom: 15px; line-height: 1.5; }
+        
+        .badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .badge-ssh { background: #3742fa; color: #fff; }
+        .badge-web { background: #ff6348; color: #fff; }
+        .badge-easy { background: #26de81; color: #000; }
+        .badge-medium { background: #fed330; color: #000; }
+        .badge-hard { background: #fc5c65; color: #fff; }
+        
         .challenge-card .meta {
             display: flex;
             justify-content: space-between;
@@ -182,9 +203,7 @@
         }
         .challenge-card .points { color: #00d4ff; font-weight: bold; }
         .challenge-card .port { color: #ffa502; }
-        .challenge-card .solved { color: #2ed573; }
         
-        /* Flag Input */
         .flag-form {
             display: flex;
             gap: 10px;
@@ -199,7 +218,6 @@
             color: #fff;
         }
         
-        /* Leaderboard */
         .leaderboard-table {
             width: 100%;
             border-collapse: collapse;
@@ -224,7 +242,6 @@
         .rank-2 { color: #c0c0c0; }
         .rank-3 { color: #cd7f32; }
         
-        /* Loading */
         .loading {
             text-align: center;
             padding: 50px;
@@ -233,7 +250,6 @@
     </style>
 </head>
 <body>
-    <!-- AUTH PAGE -->
     <div id="auth-page">
         <div class="auth-container">
             <h2 id="auth-title">Login to CyberForge</h2>
@@ -263,7 +279,6 @@
         </div>
     </div>
 
-    <!-- DASHBOARD PAGE -->
     <div id="dashboard-page" class="hidden">
         <header>
             <h1>CyberForge</h1>
@@ -325,7 +340,6 @@
         let authToken = null;
         let solvedChallenges = new Set();
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('access_token');
             const user = localStorage.getItem('user');
@@ -337,7 +351,6 @@
             document.getElementById('auth-form').addEventListener('submit', handleAuth);
         });
 
-        // Toggle Login/Register
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
             document.getElementById('auth-title').textContent = isLoginMode ? 'Login to CyberForge' : 'Create Account';
@@ -348,7 +361,6 @@
             hideMessages();
         }
 
-        // Handle Auth
         async function handleAuth(e) {
             e.preventDefault();
             hideMessages();
@@ -389,17 +401,15 @@
             }
         }
 
-        // Show Dashboard
         function showDashboard() {
             document.getElementById('auth-page').classList.add('hidden');
             document.getElementById('dashboard-page').classList.remove('hidden');
             document.getElementById('user-display').textContent = currentUser.username;
-            loadChallenges();
             loadProgress();
+            loadChallenges();
             loadLeaderboard();
         }
 
-        // Logout
         function logout() {
             localStorage.removeItem('access_token');
             localStorage.removeItem('user');
@@ -411,35 +421,6 @@
             document.getElementById('password').value = '';
         }
 
-        // Load Challenges
-        async function loadChallenges() {
-            try {
-                const res = await fetch(API_URL + '/challenges');
-                const challenges = await res.json();
-                
-                const grid = document.getElementById('challenges-grid');
-                grid.innerHTML = challenges.map(c => `
-                    <div class="challenge-card" id="challenge-${c.id}">
-                        <h3>${escapeHtml(c.name)}</h3>
-                        <p>${escapeHtml(c.description)}</p>
-                        <div class="meta">
-                            <span class="points">${c.points} pts</span>
-                            <span class="port">SSH Port: ${c.port}</span>
-                            <span class="solved" id="solved-${c.id}"></span>
-                        </div>
-                        <div class="flag-form">
-                            <input type="text" id="flag-input-${c.id}" placeholder="flag{...}">
-                            <button class="btn" onclick="submitFlag(${c.id})">Submit</button>
-                        </div>
-                        <div id="flag-result-${c.id}" style="margin-top:10px;"></div>
-                    </div>
-                `).join('');
-            } catch (err) {
-                console.error('Error loading challenges:', err);
-            }
-        }
-
-        // Load Progress
         async function loadProgress() {
             try {
                 const res = await fetch(API_URL + '/user/progress', {
@@ -449,13 +430,54 @@
                     const data = await res.json();
                     document.getElementById('stat-solved').textContent = data.challenges_solved;
                     document.getElementById('stat-points').textContent = data.total_points;
+                    solvedChallenges = new Set(data.solved_ids);
                 }
             } catch (err) {
                 console.error('Error loading progress:', err);
             }
         }
 
-        // Load Leaderboard
+        async function loadChallenges() {
+            try {
+                const res = await fetch(API_URL + '/challenges');
+                const challenges = await res.json();
+                
+                const grid = document.getElementById('challenges-grid');
+                grid.innerHTML = challenges.map(c => {
+                    const isSolved = solvedChallenges.has(c.id);
+                    const catClass = c.category.toLowerCase();
+                    const diffClass = c.difficulty.toLowerCase();
+                    
+                    return `
+                        <div class="challenge-card ${isSolved ? 'solved' : ''}" id="challenge-${c.id}">
+                            <h3>
+                                ${escapeHtml(c.name)}
+                                ${isSolved ? '<span style="color:#2ed573;">✓</span>' : ''}
+                            </h3>
+                            <div class="badges">
+                                <span class="badge badge-${catClass}">${c.category}</span>
+                                <span class="badge badge-${diffClass}">${c.difficulty}</span>
+                            </div>
+                            <p>${escapeHtml(c.description)}</p>
+                            <div class="meta">
+                                <span class="points">${c.points} pts</span>
+                                <span class="port">Port: ${c.port}</span>
+                            </div>
+                            ${!isSolved ? `
+                                <div class="flag-form">
+                                    <input type="text" id="flag-input-${c.id}" placeholder="flag{...}">
+                                    <button class="btn" onclick="submitFlag(${c.id})">Submit</button>
+                                </div>
+                                <div id="flag-result-${c.id}" style="margin-top:10px;"></div>
+                            ` : '<div style="color:#2ed573;text-align:center;padding:10px;font-weight:bold;">Challenge Completed!</div>'}
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading challenges:', err);
+            }
+        }
+
         async function loadLeaderboard() {
             try {
                 const res = await fetch(API_URL + '/leaderboard', {
@@ -483,7 +505,6 @@
             }
         }
 
-        // Submit Flag
         async function submitFlag(challengeId) {
             const input = document.getElementById('flag-input-' + challengeId);
             const result = document.getElementById('flag-result-' + challengeId);
@@ -512,10 +533,11 @@
                 
                 if (data.success) {
                     result.innerHTML = '<span style="color:#2ed573;">Correct! +' + data.points + ' points</span>';
-                    document.getElementById('solved-' + challengeId).textContent = '✓ Solved';
-                    input.value = '';
-                    loadProgress();
-                    loadLeaderboard();
+                    setTimeout(() => {
+                        loadProgress();
+                        loadChallenges();
+                        loadLeaderboard();
+                    }, 1000);
                 } else {
                     result.innerHTML = '<span style="color:#ff4757;">' + escapeHtml(data.message) + '</span>';
                 }
@@ -524,7 +546,6 @@
             }
         }
 
-        // Tab Switching
         function showTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
@@ -535,7 +556,6 @@
             if (tab === 'leaderboard') loadLeaderboard();
         }
 
-        // Helpers
         function showError(msg) {
             const el = document.getElementById('auth-error');
             el.textContent = msg;
