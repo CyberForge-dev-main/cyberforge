@@ -1,490 +1,211 @@
-
 # CyberForge
 
 Self-hosted cybersecurity training platform with isolated sandbox environments and automated flag validation.
 
 ## Overview
 
-CyberForge provides a containerized infrastructure for hands-on cybersecurity practice. The platform includes multiple challenge types running in isolated Docker containers, an HTTP API for challenge management and scoring, and a web interface for user interaction.
+CyberForge provides a containerized infrastructure for hands-on cybersecurity practice. Features include:
 
-### Key Characteristics
-
-- **Self-hosted deployment** - Complete control over infrastructure and data
-- **Container isolation** - Each challenge runs in its own Docker container with restricted permissions
-- **Modular architecture** - Add or remove challenges independently
-- **Local execution** - No external dependencies or cloud connectivity required
-- **SQLite backend** - Lightweight persistence without additional database services
+- **6 Built-in Challenges**: 3 SSH-based Linux challenges + 3 Web security challenges (OWASP Juice Shop integration)
+- **Real-time Scoring**: Automated flag validation with leaderboard
+- **Container Isolation**: Each challenge runs in isolated Docker environment
+- **Rate Limiting**: Anti-brute-force protection (5 attempts per 60 seconds)
+- **Category System**: SSH, Web, Crypto, Forensics support
+- **Difficulty Levels**: Easy, Medium, Hard badges
 
 ## Quick Start
 
 ### Prerequisites
 
-- Docker and docker-compose installed
-- Port availability: 3000, 5000, 2222-2224
-- 4GB RAM minimum, 8GB recommended
+- Docker and Docker Compose
+- Ports: 3000 (web), 5000 (API), 2222-2224 (SSH), 3001 (Juice Shop)
+- 4GB RAM minimum
 
 ### Installation
 
 ```bash
 git clone https://github.com/CyberForge-dev-main/cyberforge.git
 cd cyberforge
-docker compose up --build -d
+docker compose up -d
 ```
 
-Deployment verification:
+Wait 30 seconds, then access:
+- **Web Interface**: http://localhost:3000
+- **API Health**: http://localhost:5000/api/health
+- **Juice Shop**: http://localhost:3001
 
-```bash
-# Check container status
-docker compose ps
+### First Steps
 
-# Verify API endpoint
-curl http://localhost:5000/api/health
-
-# Access web interface
-http://localhost:3000
-```
-
-Wait 30 seconds for service initialization before accessing the interface.
-
-## System Architecture
-
-### Component Overview
-
-The system consists of four primary components communicating through a Docker internal network:
-
-```
-┌─────────────────────────────────────────┐
-│        User Browser                     │
-│    (http://localhost:3000)              │
-└────────────────┬────────────────────────┘
-                 │
-    ┌────────────┼────────────┐
-    │            │            │
-┌───▼────┐  ┌───▼─────┐  ┌──▼──────┐
-│Frontend│  │ Backend │  │Challenges│
-│:3000   │  │:5000    │  │:2222-2224│
-└────────┘  └─────────┘  └──────────┘
-                 │
-           ┌─────▼─────┐
-           │  SQLite   │
-           │   DB      │
-           └───────────┘
-```
-
-### Data Flow for Challenge Submission
-
-1. User submits flag through web interface (HTTP POST to `/api/submit`)
-2. Backend receives submission and queries challenge metadata from SQLite
-3. Backend compares submitted flag with stored value
-4. Result persisted to database (flag_submissions table)
-5. User progress updated (points awarded if correct)
-6. Response returned to frontend for display
-
-### Port Mapping
-
-| Component | Port | Protocol | Purpose |
-|-----------|------|----------|---------|
-| Frontend | 3000 | HTTP | Web interface |
-| Backend API | 5000 | HTTP | REST endpoints |
-| SSH Challenge 1 | 2222 | SSH | Interactive shell environment |
-| SSH Challenge 2 | 2223 | SSH | Interactive shell environment |
-| SSH Challenge 3 | 2224 | SSH | Interactive shell environment |
+1. Register account at http://localhost:3000
+2. SSH to challenge: `ssh ctfuser@localhost -p 2222` (password: `password123`)
+3. Find flag and submit on web interface
+4. Check leaderboard!
 
 ## Project Structure
 
 ```
 cyberforge/
-├── backend/                    # Flask API service
-│   ├── app.py                 # Application entry point
-│   ├── config.py              # Configuration settings (SQLite)
-│   ├── models.py              # Database ORM models
-│   ├── auth.py                # JWT authentication logic
-│   ├── requirements.txt        # Python dependencies
-│   └── Dockerfile             # Container image definition
-│
-├── website/                    # Frontend web interface
-│   ├── index.html             # HTML markup
-│   ├── app.js                 # React application
-│   ├── components/            # React component modules
-│   └── Dockerfile             # Container image definition
-│
-├── challenges/                 # SSH challenge environments
-│   ├── ch1/Dockerfile         # Challenge 1 image
-│   ├── ch2/Dockerfile         # Challenge 2 image
-│   └── ch3/Dockerfile         # Challenge 3 image
-│
-├── tests/                      # Functional test suite
-│   ├── test_api.sh            # API integration tests
-│   └── test_ssh.sh            # SSH connection validation
-│
-├── docker-compose.yml         # Service orchestration
-├── README.md                  # This file
-└── .gitignore                 # Git exclusion rules
+├── backend/              # Flask API (Python 3.11)
+│   ├── app.py           # Main application
+│   ├── models.py        # SQLAlchemy models
+│   ├── auth.py          # JWT authentication
+│   └── config.py        # Configuration
+├── website/             # Frontend (Vanilla JS)
+│   └── index.html       # Single-page application
+├── challenges/          # Challenge Dockerfiles
+│   ├── challenge-1/     # SSH Basics (port 2222)
+│   ├── challenge-2/     # Hidden Files (port 2223)
+│   └── challenge-3/     # Directory Search (port 2224)
+├── tests/               # Integration tests
+│   ├── health_check.sh
+│   ├── test_rate_limit.sh
+│   └── user_flow_full.sh
+├── docker-compose.yml   # Service orchestration
+├── Makefile            # Helper commands
+└── README.md           # This file
 ```
 
-## API Reference
-
-### Authentication
-
-All requests except `/api/health` and `/api/register` require JWT token in Authorization header:
-
-```
-Authorization: Bearer <jwt_token>
-```
-
-### Endpoints
-
-#### Health Check
-```
-GET /api/health
-```
-Returns service status.
-
-#### User Registration
-```
-POST /api/register
-Content-Type: application/json
-
-{
-  "username": "user1",
-  "email": "user@example.com",
-  "password": "secure_password"
-}
-```
-
-#### User Login
-```
-POST /api/login
-Content-Type: application/json
-
-{
-  "username": "user1",
-  "password": "secure_password"
-}
-```
-Returns JWT token for subsequent requests.
-
-#### List Challenges
-```
-GET /api/challenges
-Authorization: Bearer <token>
-```
-Returns array of available challenges with metadata.
-
-#### Submit Flag
-```
-POST /api/submit
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "challenge_id": 1,
-  "flag": "flag{...}"
-}
-```
-Returns validation result and points awarded.
-
-#### Leaderboard
-```
-GET /api/leaderboard
-Authorization: Bearer <token>
-```
-Returns ranked list of users by points.
-
-## Challenge Environments
-
-### SSH Challenge Access
+## Available Commands
 
 ```bash
-ssh -p 2222 ctfuser@localhost          # Challenge 1
-ssh -p 2223 ctfuser@localhost          # Challenge 2
-ssh -p 2224 ctfuser@localhost          # Challenge 3
-
-# Default credentials (if required)
-# Password: ctfpass
+make up          # Start all containers
+make down        # Stop and remove containers
+make restart     # Restart all services
+make logs        # Follow container logs
+make ps          # Show container status
+make test        # Run integration tests
+make health      # System health check
 ```
 
-### Challenge Structure
+## Challenges
 
-Each challenge container provides:
-- Limited user account with restricted permissions
-- Task description in `/home/ctfuser/README`
-- Target objective requiring investigation and problem-solving
-- Flag stored in hidden location
+### SSH Challenges
 
-Example challenge flow:
-1. Connect via SSH
-2. Read task description
-3. Investigate file system and process environment
-4. Locate and extract flag
-5. Submit flag through web interface
+| ID | Name | Difficulty | Points | Port | Flag |
+|----|------|------------|--------|------|------|
+| 1 | SSH Basics | Easy | 100 | 2222 | `flag{welcome_to_cyberforge_1}` |
+| 2 | Hidden Files | Easy | 100 | 2223 | `flag{linux_basics_are_fun}` |
+| 3 | Directory Search | Medium | 100 | 2224 | `flag{find_and_conquer}` |
+
+**Credentials**: `ctfuser` / `password123`
+
+### Web Challenges (OWASP Juice Shop)
+
+| ID | Name | Difficulty | Points | Description |
+|----|------|------------|--------|-------------|
+| 4 | Admin Login | Easy | 150 | Login as admin |
+| 5 | SQL Injection | Medium | 200 | Bypass authentication |
+| 6 | XSS Attack | Medium | 200 | Execute XSS payload |
+
+Access Juice Shop at http://localhost:3001
+
+## API Endpoints
+
+### Public Endpoints
+- `GET /api/health` - Health check
+- `POST /api/register` - User registration
+- `POST /api/login` - User authentication
+- `GET /api/challenges` - List all challenges
+
+### Protected Endpoints (require JWT)
+- `POST /api/submit_flag` - Submit flag for validation
+- `GET /api/leaderboard` - Get leaderboard
+- `GET /api/user/progress` - Get user progress
+
+## Development
+
+### Backend Development
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+### Frontend Development
+
+```bash
+cd website
+python3 -m http.server 3000
+```
 
 ## Database Schema
 
 ### Users Table
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+- id (Primary Key)
+- username (Unique)
+- email (Unique)
+- password_hash
+- created_at
 
 ### Challenges Table
-```sql
-CREATE TABLE challenges (
-    id INTEGER PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    flag VARCHAR(255) NOT NULL,
-    points INTEGER DEFAULT 100,
-    difficulty INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+- id (Primary Key)
+- name
+- description
+- flag
+- points
+- port
+- category (SSH, Web, Crypto, Forensics)
+- difficulty (Easy, Medium, Hard)
 
-### User Progress Table
-```sql
-CREATE TABLE user_progress (
-    id INTEGER PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    challenge_id INTEGER NOT NULL,
-    solved BOOLEAN DEFAULT FALSE,
-    points_earned INTEGER,
-    solved_at TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(challenge_id) REFERENCES challenges(id)
-);
-```
+### Submissions Table
+- id (Primary Key)
+- user_id (Foreign Key)
+- challenge_id (Foreign Key)
+- submitted_flag
+- is_correct
+- submitted_at
 
-## Operational Commands
+## Security Features
 
-### Service Management
-
-```bash
-# Start all services
-docker compose up -d
-
-# Stop all services
-docker compose down
-
-# View service logs
-docker compose logs [service_name]
-
-# View logs in real-time
-docker compose logs -f
-
-# Restart specific service
-docker compose restart backend
-```
-
-### Container Access
-
-```bash
-# Execute command in container
-docker exec <container_name> <command>
-
-# Interactive shell access
-docker exec -it <container_name> bash
-
-# View container resource usage
-docker compose ps -s
-```
-
-### Database Operations
-
-```bash
-# Access SQLite database
-docker exec -it cyberforge-backend sqlite3 cyberforge.db
-
-# Dump database schema
-docker exec cyberforge-backend sqlite3 cyberforge.db .schema
-
-# Reset database (destructive)
-docker compose down -v
-docker compose up --build
-```
+- **JWT Authentication**: Secure token-based auth with 24h expiration
+- **Rate Limiting**: 5 flag submission attempts per 60 seconds
+- **Password Hashing**: SHA-256 hashed passwords
+- **Container Isolation**: Challenges run in separate containers
+- **No Root SSH**: SSH challenges run as unprivileged user
 
 ## Troubleshooting
 
-### Service Fails to Start
+### Containers won't start
+```bash
+docker compose down
+docker compose up -d --build
+```
 
-**Symptom:** `Connection refused` on port 5000
-
-**Diagnosis:**
+### Backend not responding
 ```bash
 docker compose logs backend
+docker compose restart backend
 ```
 
-**Resolution:**
-1. Verify `config.py` contains `sqlite:///cyberforge.db`
-2. Check Docker daemon is running: `docker ps`
-3. Rebuild containers: `docker compose down -v && docker compose up --build`
-
-### SSH Connection Timeout
-
-**Symptom:** `ssh: connect to host localhost port 2222: Connection refused`
-
-**Diagnosis:**
+### Port conflicts
 ```bash
-docker compose ps | grep challenge
+# Check ports
+sudo netstat -tulpn | grep -E ':(3000|5000|2222|2223|2224|3001)'
+
+# Change ports in docker-compose.yml
 ```
-
-**Resolution:**
-1. Verify challenge containers are running
-2. Check port forwarding: `docker port cyberforge-ch1`
-3. Wait 5-10 seconds for container initialization
-
-### Database Connection Error
-
-**Symptom:** `DatabaseError: Unable to open database file`
-
-**Resolution:**
-1. Verify database path in `config.py`
-2. Check file permissions: `docker exec cyberforge-backend ls -la cyberforge.db`
-3. Reset database: `docker compose down -v && docker compose up --build`
-
-### CORS Errors in Browser Console
-
-**Symptom:** `Access to XMLHttpRequest blocked by CORS policy`
-
-**Resolution:**
-1. Verify CORS middleware enabled in `backend/app.py`
-2. Check API URL in frontend matches deployment (typically `http://localhost:5000`)
-3. Restart backend: `docker compose restart backend`
-
-## Testing
-
-Run functional test suite:
-
-```bash
-# Navigate to test directory
-cd tests
-
-# Execute API tests
-bash test_api.sh
-
-# Execute SSH connectivity tests
-bash test_ssh.sh
-```
-
-Tests verify:
-- API endpoints responsive
-- Database connectivity
-- SSH challenge accessibility
-- Flag validation logic
-- User authentication flow
-
-## System Requirements
-
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| RAM | 4 GB | 8 GB |
-| Storage | 5 GB | 10 GB |
-| Disk I/O | 50 MB/s | 100+ MB/s |
-| CPU Cores | 2 | 4+ |
-| Operating System | Linux, macOS, Windows (WSL2) | Linux |
-
-## Installation for Specific Platforms
-
-### Linux (Ubuntu 20.04+)
-
-```bash
-sudo apt-get update
-sudo apt-get install -y docker.io docker-compose
-sudo usermod -aG docker $USER
-# Log out and back in for group changes to take effect
-newgrp docker
-```
-
-### macOS
-
-```bash
-# Install using Homebrew
-brew install docker docker-compose
-
-# Or download Docker Desktop
-# https://www.docker.com/products/docker-desktop
-```
-
-### Windows (WSL2)
-
-```bash
-# Install WSL2
-wsl --install
-
-# Install Docker Desktop with WSL2 backend
-# https://www.docker.com/products/docker-desktop
-
-# Verify from PowerShell
-wsl docker ps
-```
-
-## Development Workflow
-
-### Making Code Changes
-
-```bash
-# Edit source files in local directory
-vim backend/app.py
-
-# Rebuild affected containers
-docker compose up --build -d service_name
-
-# View logs for verification
-docker compose logs -f service_name
-```
-
-### Adding New Challenges
-
-1. Create directory: `mkdir -p challenges/ch4`
-2. Create `Dockerfile` with challenge environment
-3. Update `docker-compose.yml` with new service definition
-4. Insert challenge metadata into database
-5. Rebuild: `docker compose up --build`
-
-### Modifying Database Schema
-
-1. Stop services: `docker compose down`
-2. Update `models.py` with new schema
-3. Reset database: `docker compose down -v`
-4. Rebuild: `docker compose up --build`
-5. Verify schema: `docker exec cyberforge-backend sqlite3 cyberforge.db .schema`
-
-## Security Considerations
-
-- Credentials stored as bcrypt hashes in database
-- JWT tokens expire after configurable duration
-- SSH challenge containers run with minimal privileges
-- Database file permission restricted to container user
-- No plain-text secrets in configuration files
-
-## Performance Optimization
-
-- Challenge containers allocate limited resources to prevent resource exhaustion
-- SQLite appropriate for deployment patterns with <100 concurrent users
-- Consider PostgreSQL for larger deployments (requires code modification)
-- Static asset caching configured on frontend service
-
-## License
-
-MIT License - See repository for details
 
 ## Contributing
 
-Report issues on GitHub repository issue tracker. Contributions accepted via pull request.
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/new-challenge`)
+3. Commit changes (`git commit -m 'Add new challenge'`)
+4. Push to branch (`git push origin feature/new-challenge`)
+5. Open Pull Request
 
-## Related Resources
+## License
 
-- Docker documentation: https://docs.docker.com
-- Flask API framework: https://flask.palletsprojects.com
-- React frontend library: https://react.dev
-- SQLite database: https://www.sqlite.org
+MIT License - see LICENSE file
 
----
+## Roadmap
 
-**Current Version:** 2.0  
-**Last Updated:** 2025-11-29  
-**Status:** Stable
+- [ ] More challenge categories (Crypto, Forensics, Reverse Engineering)
+- [ ] Team support and CTF events
+- [ ] Hints system
+- [ ] Challenge timer
+- [ ] Admin dashboard
+- [ ] HTTPS/SSL support
+- [ ] Production deployment guide
