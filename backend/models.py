@@ -39,3 +39,4 @@ class Submission(db.Model):
     submitted_flag = db.Column(db.String(255), nullable=False)
     is_correct = db.Column(db.Boolean, default=False)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    solve_time = db.Column(db.Integer)

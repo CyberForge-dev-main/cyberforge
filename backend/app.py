@@ -67,25 +67,48 @@ def login():
 @jwt_required()
 def submit_flag():
     user = get_current_user()
+    
+    # Rate limiting
     if is_rate_limited(user.id):
-        return jsonify({'success': False, 'message': 'Too many attempts. Please try again later.'}), 429
+        return jsonify({
+            'success': False,
+            'message': 'Too many attempts. Please try again later.'
+        }), 429
+    
     data = request.get_json()
+    
     if not data or not data.get('challenge_id') or not data.get('flag'):
         return jsonify({'error': 'Missing fields'}), 400
+    
     challenge = Challenge.query.get(data['challenge_id'])
     if not challenge:
         return jsonify({'error': 'Challenge not found'}), 404
-    existing = Submission.query.filter_by(user_id=user.id, challenge_id=challenge.id, is_correct=True).first()
-    if existing:
-        return jsonify({'success': False, 'message': 'Already solved!', 'points': 0}), 200
-    is_correct = data['flag'].strip() == challenge.flag.strip()
-    submission = Submission(user_id=user.id, challenge_id=challenge.id, submitted_flag=data['flag'], is_correct=is_correct)
+    
+    is_correct = (data['flag'] == challenge.flag)
+    
+    # Calculate solve time (seconds since registration)
+    solve_time = None
+    if is_correct:
+        from datetime import datetime
+        time_diff = datetime.utcnow() - user.created_at
+        solve_time = int(time_diff.total_seconds())
+    
+    submission = Submission(
+        user_id=user.id,
+        challenge_id=challenge.id,
+        submitted_flag=data['flag'],
+        is_correct=is_correct,
+        solve_time=solve_time
+    )
+    
     db.session.add(submission)
     db.session.commit()
+    
     return jsonify({
         'success': is_correct,
         'message': 'Correct flag!' if is_correct else 'Wrong flag',
-        'points': challenge.points if is_correct else 0
+        'points': challenge.points if is_correct else 0,
+        'solve_time': solve_time
     }), 200
 
 @app.route('/api/challenges', methods=['GET'])
@@ -156,6 +179,92 @@ def init_db():
             for challenge in challenges:
                 db.session.add(challenge)
             db.session.commit()
+
+
+@app.route('/api/user/<username>/profile', methods=['GET'])
+def get_user_profile(username):
+    """Get detailed user profile with statistics"""
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    # Get all correct submissions
+    correct_submissions = Submission.query.filter_by(
+        user_id=user.id,
+        is_correct=True
+    ).all()
+    
+    # Calculate total points
+    total_points = sum(s.challenge.points for s in correct_submissions)
+    
+    # Group by category
+    by_category = {}
+    for submission in correct_submissions:
+        category = submission.challenge.category
+        if category not in by_category:
+            by_category[category] = {
+                'solved': 0,
+                'points': 0
+            }
+        by_category[category]['solved'] += 1
+        by_category[category]['points'] += submission.challenge.points
+    
+    # Find favorite category (most solved)
+    favorite_category = None
+    if by_category:
+        favorite_category = max(by_category.items(), key=lambda x: x[1]['solved'])[0]
+    
+    # Calculate rank
+    users = User.query.all()
+    leaderboard = []
+    for u in users:
+        correct = Submission.query.filter_by(user_id=u.id, is_correct=True).all()
+        points = sum(Challenge.query.get(s.challenge_id).points for s in correct if Challenge.query.get(s.challenge_id))
+        leaderboard.append({
+            'username': u.username,
+            'points': points
+        })
+    leaderboard = sorted(leaderboard, key=lambda x: x['points'], reverse=True)
+    rank = next((i+1 for i, u in enumerate(leaderboard) if u['username'] == username), None)
+    
+    # Recent activity (last 5 correct submissions)
+    recent = Submission.query.filter_by(
+        user_id=user.id,
+        is_correct=True
+    ).order_by(Submission.submitted_at.desc()).limit(5).all()
+    
+    recent_activity = [
+        {
+            'challenge_name': s.challenge.name,
+            'challenge_id': s.challenge_id,
+            'points': s.challenge.points,
+            'submitted_at': s.submitted_at.isoformat(),
+            'solve_time': s.solve_time
+        }
+        for s in recent
+    ]
+    
+    # Average solve time
+    solve_times = [s.solve_time for s in correct_submissions if s.solve_time is not None]
+    avg_solve_time = int(sum(solve_times) / len(solve_times)) if solve_times else None
+    
+    return jsonify({
+        'username': user.username,
+        'email': user.email,
+        'joined': user.created_at.isoformat(),
+        'stats': {
+            'total_points': total_points,
+            'challenges_solved': len(correct_submissions),
+            'rank': rank,
+            'total_users': len(users),
+            'favorite_category': favorite_category,
+            'by_category': by_category,
+            'avg_solve_time': avg_solve_time,
+            'recent_activity': recent_activity
+        }
+    }), 200
+
+
 
 if __name__ == '__main__':
     init_db()
