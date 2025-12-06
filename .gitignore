@@ -8,8 +8,10 @@ venv/
 env/
 ENV/
 
-# Database (local copy only)
+# Database
 instance/
+backend/cyberforge.db
+*.db
 
 # Environment
 .env
@@ -32,17 +34,20 @@ Thumbs.db
 # Logs
 *.log
 logs/
-backend/cyberforge.db
 
 # Backup files
 *.bak
 *.backup
 *.broken_*
 
-# Quick fix scripts
+# Temporary scripts (не коммитить)
 *_quick_fix*.sh
 fix_*.py
+fix_*.sh
 
 # Archive directories
-archive/old_challenges_*/
-archive/old_challenges_backup/
+archive/old_*/
+archive/backup*/
+
+# Dumps (локальные, не коммитить)
+project_dump.txt

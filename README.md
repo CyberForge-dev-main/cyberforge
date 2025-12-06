@@ -42,29 +42,6 @@ Wait 30 seconds, then access:
 4. Check leaderboard!
 
 ## Project Structure
-
-```
-cyberforge/
-├── backend/              # Flask API (Python 3.11)
-│   ├── app.py           # Main application
-│   ├── models.py        # SQLAlchemy models
-│   ├── auth.py          # JWT authentication
-│   └── config.py        # Configuration
-├── website/             # Frontend (Vanilla JS)
-│   └── index.html       # Single-page application
-├── challenges/          # Challenge Dockerfiles
-│   ├── challenge-1/     # SSH Basics (port 2222)
-│   ├── challenge-2/     # Hidden Files (port 2223)
-│   └── challenge-3/     # Directory Search (port 2224)
-├── tests/               # Integration tests
-│   ├── health_check.sh
-│   ├── test_rate_limit.sh
-│   └── user_flow_full.sh
-├── docker-compose.yml   # Service orchestration
-├── Makefile            # Helper commands
-└── README.md           # This file
-```
-
 ## Available Commands
 
 ```bash

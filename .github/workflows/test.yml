@@ -17,10 +17,15 @@ jobs:
       run: docker compose up -d
       
     - name: Wait for services
-      run: sleep 10
+      run: sleep 15
       
-    - name: Run MVP tests
-      run: bash tests/test_mvp.sh localhost
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq sshpass netcat
+      
+    - name: Run smoke test
+      run: bash scripts/smoke_test.sh
       
     - name: Stop containers
       run: docker compose down

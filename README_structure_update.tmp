@@ -1,0 +1,31 @@
+
+## Project Structure
+
+```
+cyberforge/
+├── backend/              # Flask API (Python 3.11)
+│   ├── app.py           # Main application
+│   ├── models.py        # SQLAlchemy models
+│   ├── auth.py          # JWT authentication
+│   └── config.py        # Configuration
+├── website/             # Frontend (Vanilla JS)
+│   └── index.html       # Single-page application
+├── challenges/          # Challenge Dockerfiles
+│   ├── ch1/             # SSH Basics (port 2222)
+│   ├── ch2/             # Hidden Files (port 2223)
+│   └── ch3/             # Directory Search (port 2224)
+├── scripts/             # Utility scripts
+│   ├── smoke_test.sh    # Full smoke test
+│   ├── health_check.sh  # Health check
+│   ├── test_rate_limit.sh
+│   ├── user_flow_full.sh
+│   ├── check_system.sh  # System diagnostics
+│   └── dump_system.sh   # Project dump
+├── docs/                # Documentation
+│   └── CURRENT_STATE.md # Project status
+├── .github/workflows/   # CI/CD pipelines
+├── docker-compose.yml   # Service orchestration
+├── Makefile            # Helper commands
+└── README.md           # This file
+```
+
