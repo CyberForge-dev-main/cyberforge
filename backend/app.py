@@ -11,15 +11,19 @@ RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX = 5
 _rate_buckets = {}
 
-def is_rate_limited(user_id: int) -> bool:
+def is_rate_limited(user_id: int, challenge_id: int) -> bool:
+    """Rate limit per user per challenge"""
+    key = f"{user_id}:{challenge_id}"
     now = time()
-    bucket = _rate_buckets.get(user_id, [])
+    bucket = _rate_buckets.get(key, [])
     bucket = [t for t in bucket if now - t < RATE_LIMIT_WINDOW]
+    
     if len(bucket) >= RATE_LIMIT_MAX:
-        _rate_buckets[user_id] = bucket
+        _rate_buckets[key] = bucket
         return True
+    
     bucket.append(now)
-    _rate_buckets[user_id] = bucket
+    _rate_buckets[key] = bucket
     return False
 
 app = Flask(__name__)
@@ -27,7 +31,7 @@ app.config.from_object(Config)
 
 db.init_app(app)
 jwt = JWTManager(app)
-CORS(app)
+CORS(app, origins=["*"], supports_credentials=True)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -67,23 +71,38 @@ def login():
 @jwt_required()
 def submit_flag():
     user = get_current_user()
-    
-    # Rate limiting
-    if is_rate_limited(user.id):
-        return jsonify({
-            'success': False,
-            'message': 'Too many attempts. Please try again later.'
-        }), 429
-    
     data = request.get_json()
     
     if not data or not data.get('challenge_id') or not data.get('flag'):
         return jsonify({'error': 'Missing fields'}), 400
     
-    challenge = Challenge.query.get(data['challenge_id'])
+    challenge_id = data['challenge_id']
+    challenge = Challenge.query.get(challenge_id)
     if not challenge:
         return jsonify({'error': 'Challenge not found'}), 404
     
+    # 1. FIRST: Check if already solved
+    existing = Submission.query.filter_by(
+        user_id=user.id,
+        challenge_id=challenge_id,
+        is_correct=True
+    ).first()
+    
+    if existing:
+        return jsonify({
+            'error': 'Challenge already solved',
+            'solve_time': existing.solve_time,
+            'points': 0
+        }), 400
+    
+    # 2. SECOND: Rate limit per challenge
+    if is_rate_limited(user.id, challenge_id):
+        return jsonify({
+            'success': False,
+            'message': 'Too many attempts. Please try again later.'
+        }), 429
+    
+    # 3. THIRD: Validate flag
     is_correct = (data['flag'] == challenge.flag)
     
     # Calculate solve time (seconds since registration)
@@ -144,43 +163,6 @@ def user_progress():
         'solved_ids': solved_ids
     }), 200
 
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Not found'}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'error': 'Internal server error'}), 500
-
-def init_db():
-    with app.app_context():
-        db.create_all()
-        if Challenge.query.count() == 0:
-            challenges = [
-                Challenge(name='SSH Basics', description='Connect via SSH and find the flag', 
-                         flag='flag{welcome_to_cyberforge_1}', points=100, port=2222,
-                         category='SSH', difficulty='Easy'),
-                Challenge(name='Hidden Files', description='Find the hidden flag file', 
-                         flag='flag{linux_basics_are_fun}', points=100, port=2223,
-                         category='SSH', difficulty='Easy'),
-                Challenge(name='Directory Search', description='Search directories for the flag', 
-                         flag='flag{find_and_conquer}', points=100, port=2224,
-                         category='SSH', difficulty='Medium'),
-                Challenge(name='Juice Shop: Admin Login', description='Login as admin in OWASP Juice Shop (port 3001). Flag format: flag{admin_email}',
-                         flag='flag{admin@juice-sh.op}', points=150, port=3001,
-                         category='Web', difficulty='Easy'),
-                Challenge(name='Juice Shop: SQL Injection', description='Bypass login using SQL injection. Flag: flag{sqli_success}',
-                         flag='flag{sqli_success}', points=200, port=3001,
-                         category='Web', difficulty='Medium'),
-                Challenge(name='Juice Shop: XSS', description='Perform XSS attack. Flag: flag{xss_executed}',
-                         flag='flag{xss_executed}', points=200, port=3001,
-                         category='Web', difficulty='Medium'),
-            ]
-            for challenge in challenges:
-                db.session.add(challenge)
-            db.session.commit()
-
-
 @app.route('/api/user/<username>/profile', methods=['GET'])
 def get_user_profile(username):
     """Get detailed user profile with statistics"""
@@ -188,46 +170,34 @@ def get_user_profile(username):
     if not user:
         return jsonify({'error': 'User not found'}), 404
     
-    # Get all correct submissions
     correct_submissions = Submission.query.filter_by(
         user_id=user.id,
         is_correct=True
     ).all()
     
-    # Calculate total points
     total_points = sum(s.challenge.points for s in correct_submissions)
     
-    # Group by category
     by_category = {}
     for submission in correct_submissions:
         category = submission.challenge.category
         if category not in by_category:
-            by_category[category] = {
-                'solved': 0,
-                'points': 0
-            }
+            by_category[category] = {'solved': 0, 'points': 0}
         by_category[category]['solved'] += 1
         by_category[category]['points'] += submission.challenge.points
     
-    # Find favorite category (most solved)
     favorite_category = None
     if by_category:
         favorite_category = max(by_category.items(), key=lambda x: x[1]['solved'])[0]
     
-    # Calculate rank
     users = User.query.all()
     leaderboard = []
     for u in users:
         correct = Submission.query.filter_by(user_id=u.id, is_correct=True).all()
         points = sum(Challenge.query.get(s.challenge_id).points for s in correct if Challenge.query.get(s.challenge_id))
-        leaderboard.append({
-            'username': u.username,
-            'points': points
-        })
+        leaderboard.append({'username': u.username, 'points': points})
     leaderboard = sorted(leaderboard, key=lambda x: x['points'], reverse=True)
     rank = next((i+1 for i, u in enumerate(leaderboard) if u['username'] == username), None)
     
-    # Recent activity (last 5 correct submissions)
     recent = Submission.query.filter_by(
         user_id=user.id,
         is_correct=True
@@ -244,7 +214,6 @@ def get_user_profile(username):
         for s in recent
     ]
     
-    # Average solve time
     solve_times = [s.solve_time for s in correct_submissions if s.solve_time is not None]
     avg_solve_time = int(sum(solve_times) / len(solve_times)) if solve_times else None
     
@@ -264,8 +233,42 @@ def get_user_profile(username):
         }
     }), 200
 
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Not found'}), 404
 
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
+def init_db():
+    with app.app_context():
+        db.create_all()
+        if Challenge.query.count() == 0:
+            challenges = [
+                Challenge(name='SSH Basics', description='Find the flag in the home directory', 
+                         flag='flag{welcome_to_cyberforge_1}', points=100, port=2222,
+                         category='SSH', difficulty='Easy'),
+                Challenge(name='Hidden Files', description='Find the hidden flag file', 
+                         flag='flag{linux_basics_are_fun}', points=100, port=2223,
+                         category='SSH', difficulty='Easy'),
+                Challenge(name='Directory Search', description='Search directories for the flag', 
+                         flag='flag{find_and_conquer}', points=100, port=2224,
+                         category='SSH', difficulty='Medium'),
+                Challenge(name='Juice Shop: Admin Access', description='Login as admin in Juice Shop. Submit admin email as flag format: flag{admin_email}', 
+                         flag='flag{admin@juice-sh.op}', points=150, port=3001,
+                         category='Web', difficulty='Easy'),
+                Challenge(name='Juice Shop: SQL Injection', description='Bypass login using SQL injection in Juice Shop', 
+                         flag='flag{sqli_success}', points=200, port=3001,
+                         category='Web', difficulty='Medium'),
+                Challenge(name='Juice Shop: XSS', description='Execute XSS attack in Juice Shop', 
+                         flag='flag{xss_executed}', points=200, port=3001,
+                         category='Web', difficulty='Medium'),
+            ]
+            for challenge in challenges:
+                db.session.add(challenge)
+            db.session.commit()
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)

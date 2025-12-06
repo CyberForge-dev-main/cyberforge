@@ -1,18 +1,35 @@
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from models import User, db
+from sqlalchemy.exc import IntegrityError
 
 def register_user(username, email, password):
     """Регистрация нового пользователя"""
+    # Check username
     if User.query.filter_by(username=username).first():
         return None, "Username already exists"
+    
+    # Check email
+    if email and User.query.filter_by(email=email).first():
+        return None, "Email already exists"
     
     user = User(username=username, email=email)
     user.set_password(password)
     
-    db.session.add(user)
-    db.session.commit()
-    
-    return user, None
+    try:
+        db.session.add(user)
+        db.session.commit()
+        return user, None
+    except IntegrityError as e:
+        db.session.rollback()
+        error_msg = str(e.orig)
+        if 'users.email' in error_msg:
+            return None, "Email already exists"
+        elif 'users.username' in error_msg:
+            return None, "Username already exists"
+        return None, "Registration failed"
+    except Exception:
+        db.session.rollback()
+        return None, "Registration failed"
 
 def authenticate_user(username, password):
     """Авторизация пользователя"""

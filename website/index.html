@@ -334,7 +334,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        const API_URL = window.location.protocol + '//' + window.location.hostname + ':5000/api';
         let isLoginMode = true;
         let currentUser = null;
         let authToken = null;
@@ -463,6 +463,13 @@
                                 <span class="points">${c.points} pts</span>
                                 <span class="port">Port: ${c.port}</span>
                             </div>
+                            ${c.category === 'SSH' ? `
+                                <div style="background:rgba(255,193,7,0.1);border:1px solid #ffc107;padding:10px;border-radius:5px;margin-bottom:15px;font-size:0.9em;">
+                                    <strong style="color:#ffc107;">🔑 SSH Connection:</strong><br>
+                                    ssh ctfuser@<span id="server-ip">SERVER_IP</span> -p ${c.port}</code><br>
+                                    <span style="color:#aaa;">Password: password123</code></span>
+                                </div>
+                            ` : ''}
                             ${!isSolved ? `
                                 <div class="flag-form">
                                     <input type="text" id="flag-input-${c.id}" placeholder="flag{...}">
@@ -578,3 +585,12 @@
     </script>
 </body>
 </html>
+<script>
+// Auto-detect server IP for SSH instructions
+document.addEventListener('DOMContentLoaded', () => {
+    const serverIP = window.location.hostname;
+    document.querySelectorAll('#server-ip').forEach(el => {
+        el.textContent = serverIP;
+    });
+});
+</script>
