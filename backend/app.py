@@ -71,7 +71,7 @@ def submit_flag():
         return jsonify({"error": "Missing fields"}), 400
     
     challenge_id = data['challenge_id']
-    challenge = Challenge.query.get(challenge_id)
+    challenge = db.session.get(Challenge, challenge_id)
     if not challenge:
         return jsonify({"error": "Challenge not found"}), 404
     
@@ -140,7 +140,7 @@ def get_leaderboard():
     result = []
     for user in users:
         correct = Submission.query.filter_by(user_id=user.id, is_correct=True).all()
-        points = sum(Challenge.query.get(s.challenge_id).points for s in correct if Challenge.query.get(s.challenge_id))
+        points = sum(db.session.get(Challenge, s.challenge_id).points for s in correct if db.session.get(Challenge, s.challenge_id))
         result.append({"username": user.username, "solved": len(correct), "points": points})
     return jsonify(sorted(result, key=lambda x: x['points'], reverse=True)), 200
 
@@ -182,7 +182,7 @@ def get_user_profile(username):
     leaderboard = []
     for u in users:
         correct = Submission.query.filter_by(user_id=u.id, is_correct=True).all()
-        points = sum(Challenge.query.get(s.challenge_id).points for s in correct if Challenge.query.get(s.challenge_id))
+        points = sum(db.session.get(Challenge, s.challenge_id).points for s in correct if db.session.get(Challenge, s.challenge_id))
         leaderboard.append({"username": u.username, "points": points})
     leaderboard = sorted(leaderboard, key=lambda x: x['points'], reverse=True)
     rank = next((i+1 for i, u in enumerate(leaderboard) if u['username'] == username), None)
@@ -214,7 +214,7 @@ def get_user_profile(username):
 def assign_challenge(challenge_id):
     from pool_manager import pool_manager
     user_id = get_jwt_identity()
-    challenge = Challenge.query.get(challenge_id)
+    challenge = db.session.get(Challenge, challenge_id)
     if not challenge:
         return jsonify({"error": "Challenge not found"}), 404
     instance = pool_manager.assign_container(user_id, challenge_id, db.session)
@@ -235,7 +235,7 @@ def assign_challenge(challenge_id):
 def release_challenge(instance_id):
     from pool_manager import pool_manager
     user_id = get_jwt_identity()
-    instance = ChallengeInstance.query.get(instance_id)
+    instance = db.session.get(ChallengeInstance, instance_id)
     if not instance:
         return jsonify({"error": "Instance not found"}), 404
     if instance.user_id != user_id:
