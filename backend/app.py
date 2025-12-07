@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from config import Config
-from models import db, User, Challenge, Submission
+from models import db, User, Challenge, Submission, ChallengeInstance
 from auth import register_user, authenticate_user, get_current_user
 from time import time
 
@@ -225,8 +225,8 @@ def assign_challenge(challenge_id):
         "instance": {
             "id": instance.id,
             "container_name": instance.container_name,
-            "port": instance.assigned_port,
-            "ssh_command": f"ssh ctfuser@localhost -p {instance.assigned_port}"
+            "port": instance.port,
+            "ssh_command": f"ssh ctfuser@localhost -p {instance.port}"
         }
     }), 201
 
@@ -234,7 +234,6 @@ def assign_challenge(challenge_id):
 @jwt_required()
 def release_challenge(instance_id):
     from pool_manager import pool_manager
-    from models import ChallengeInstance
     user_id = get_jwt_identity()
     instance = ChallengeInstance.query.get(instance_id)
     if not instance:
@@ -247,7 +246,6 @@ def release_challenge(instance_id):
 @app.route("/api/challenge/my-instances", methods=["GET"])
 @jwt_required()
 def get_my_instances():
-    from models import ChallengeInstance
     user_id = get_jwt_identity()
     instances = ChallengeInstance.query.filter_by(user_id=user_id, status="active").all()
     return jsonify({
@@ -255,8 +253,8 @@ def get_my_instances():
             "id": i.id,
             "challenge_id": i.challenge_id,
             "container_name": i.container_name,
-            "port": i.assigned_port,
-            "ssh_command": f"ssh ctfuser@localhost -p {i.assigned_port}"
+            "port": i.port,
+            "ssh_command": f"ssh ctfuser@localhost -p {i.port}"
         } for i in instances]
     }), 200
 

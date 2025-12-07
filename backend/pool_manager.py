@@ -1,95 +1,49 @@
-#!/usr/bin/env python3
-"""
-Challenge Pool Manager
-Управление назначением статических контейнеров пользователям
-"""
-
-from typing import Optional, Dict, List
-from models import ChallengeInstance, Challenge
-from datetime import datetime
-
-# Конфигурация pool
-CHALLENGE_POOLS = {
-    1: {  # Challenge 1
-        'containers': [
-            {'name': 'cyberforge-ch1-pool-1', 'port': 30000},
-            {'name': 'cyberforge-ch1-pool-2', 'port': 30001},
-            {'name': 'cyberforge-ch1-pool-3', 'port': 30002},
-            {'name': 'cyberforge-ch1-pool-4', 'port': 30003},
-            {'name': 'cyberforge-ch1-pool-5', 'port': 30004},
-        ]
-    },
-    2: {  # Challenge 2
-        'containers': [
-            {'name': 'cyberforge-ch2-pool-1', 'port': 30010},
-            {'name': 'cyberforge-ch2-pool-2', 'port': 30011},
-            {'name': 'cyberforge-ch2-pool-3', 'port': 30012},
-            {'name': 'cyberforge-ch2-pool-4', 'port': 30013},
-            {'name': 'cyberforge-ch2-pool-5', 'port': 30014},
-        ]
-    },
-    3: {  # Challenge 3
-        'containers': [
-            {'name': 'cyberforge-ch3-pool-1', 'port': 30020},
-            {'name': 'cyberforge-ch3-pool-2', 'port': 30021},
-            {'name': 'cyberforge-ch3-pool-3', 'port': 30022},
-            {'name': 'cyberforge-ch3-pool-4', 'port': 30023},
-            {'name': 'cyberforge-ch3-pool-5', 'port': 30024},
-        ]
-    }
-}
-
+from datetime import datetime, timedelta
+from models import ChallengeInstance
 
 class PoolManager:
-    """Менеджер pool контейнеров"""
+    """Manages challenge container pool assignments"""
+    
+    # Challenge pool configuration
+    POOL_CONFIG = {
+        1: {'name_prefix': 'cyberforge-ch1-pool', 'ports': list(range(30000, 30005))},
+        2: {'name_prefix': 'cyberforge-ch2-pool', 'ports': list(range(30010, 30015))},
+        3: {'name_prefix': 'cyberforge-ch3-pool', 'ports': list(range(30020, 30025))},
+    }
     
     @staticmethod
-    def get_available_container(challenge_id: int, db_session) -> Optional[Dict]:
-        """
-        Получить свободный контейнер для челленджа
-        
-        Args:
-            challenge_id: ID челленджа
-            db_session: сессия БД
-            
-        Returns:
-            Dict с полями name, port или None если нет свободных
-        """
-        if challenge_id not in CHALLENGE_POOLS:
+    def get_available_container(challenge_id: int, db_session):
+        """Find available container from pool"""
+        if challenge_id not in PoolManager.POOL_CONFIG:
             return None
         
-        pool = CHALLENGE_POOLS[challenge_id]['containers']
+        config = PoolManager.POOL_CONFIG[challenge_id]
         
-        # Получить занятые порты
-        assigned = ChallengeInstance.query.filter_by(
+        # Get all assigned ports for this challenge
+        assigned = db_session.query(ChallengeInstance).filter_by(
             challenge_id=challenge_id,
             status='active'
         ).all()
         
-        assigned_ports = {inst.assigned_port for inst in assigned}
+        assigned_ports = {inst.port for inst in assigned}
         
-        # Найти свободный контейнер
-        for container in pool:
-            if container['port'] not in assigned_ports:
-                return container
+        # Find first available port
+        for port in config['ports']:
+            if port not in assigned_ports:
+                container_name = f"{config['name_prefix']}-{port}"
+                return {
+                    'name': container_name,
+                    'port': port,
+                    'challenge_id': challenge_id
+                }
         
         return None
     
     @staticmethod
-    def assign_container(user_id: int, challenge_id: int, db_session) -> Optional[ChallengeInstance]:
-        """
-        Назначить контейнер пользователю
-        
-        Args:
-            user_id: ID пользователя
-            challenge_id: ID челленджа
-            db_session: сессия БД
-            
-        Returns:
-            ChallengeInstance или None если нет свободных
-        """
-        # Проверить, нет ли уже назначенного
-        existing = ChallengeInstance.query.filter_by(
+    def assign_container(user_id: int, challenge_id: int, db_session):
+        """Assign container to user"""
+        # Check if user already has active instance
+        existing = db_session.query(ChallengeInstance).filter_by(
             user_id=user_id,
             challenge_id=challenge_id,
             status='active'
@@ -98,18 +52,20 @@ class PoolManager:
         if existing:
             return existing
         
-        # Найти свободный контейнер
+        # Find available container
         container = PoolManager.get_available_container(challenge_id, db_session)
         if not container:
             return None
         
-        # Создать instance
+        # Create instance
         instance = ChallengeInstance(
             user_id=user_id,
             challenge_id=challenge_id,
-            assigned_port=container['port'],
+            port=container['port'],
             container_name=container['name'],
-            status='active'
+            status='active',
+            created_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(hours=2)
         )
         
         db_session.add(instance)
@@ -119,55 +75,28 @@ class PoolManager:
     
     @staticmethod
     def release_container(instance_id: int, db_session) -> bool:
-        """
-        Освободить контейнер
-        
-        Args:
-            instance_id: ID экземпляра
-            db_session: сессия БД
-            
-        Returns:
-            bool: успешно ли освобождён
-        """
-        instance = ChallengeInstance.query.get(instance_id)
+        """Release container"""
+        instance = db_session.query(ChallengeInstance).filter_by(id=instance_id).first()
         if not instance:
             return False
         
         instance.status = 'released'
-        instance.released_at = datetime.utcnow()
         db_session.commit()
-        
         return True
     
     @staticmethod
-    def get_pool_stats(challenge_id: int, db_session) -> Dict:
-        """
-        Получить статистику pool
+    def cleanup_expired(db_session):
+        """Cleanup expired instances"""
+        expired = db_session.query(ChallengeInstance).filter(
+            ChallengeInstance.expires_at < datetime.utcnow(),
+            ChallengeInstance.status == 'active'
+        ).all()
         
-        Args:
-            challenge_id: ID челленджа
-            db_session: сессия БД
-            
-        Returns:
-            Dict со статистикой
-        """
-        if challenge_id not in CHALLENGE_POOLS:
-            return {'error': 'Challenge not found'}
+        for instance in expired:
+            instance.status = 'expired'
         
-        pool_size = len(CHALLENGE_POOLS[challenge_id]['containers'])
-        
-        assigned = ChallengeInstance.query.filter_by(
-            challenge_id=challenge_id,
-            status='active'
-        ).count()
-        
-        return {
-            'challenge_id': challenge_id,
-            'pool_size': pool_size,
-            'assigned': assigned,
-            'available': pool_size - assigned
-        }
+        db_session.commit()
+        return len(expired)
 
-
-# Глобальный экземпляр
+# Export singleton
 pool_manager = PoolManager()
