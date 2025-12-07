@@ -1,14 +1,11 @@
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from models import User, db
+from models import db, User
+from flask_jwt_extended import create_access_token
 from sqlalchemy.exc import IntegrityError
 
 def register_user(username, email, password):
-    """Регистрация нового пользователя"""
-    # Check username
     if User.query.filter_by(username=username).first():
         return None, "Username already exists"
     
-    # Check email
     if email and User.query.filter_by(email=email).first():
         return None, "Email already exists"
     
@@ -19,22 +16,15 @@ def register_user(username, email, password):
         db.session.add(user)
         db.session.commit()
         return user, None
-    except IntegrityError as e:
+    except IntegrityError:
         db.session.rollback()
-        error_msg = str(e.orig)
-        if 'users.email' in error_msg:
-            return None, "Email already exists"
-        elif 'users.username' in error_msg:
-            return None, "Username already exists"
         return None, "Registration failed"
     except Exception:
         db.session.rollback()
         return None, "Registration failed"
 
 def authenticate_user(username, password):
-    """Авторизация пользователя"""
     user = User.query.filter_by(username=username).first()
-    
     if not user or not user.check_password(password):
         return None, "Invalid credentials"
     
@@ -42,21 +32,6 @@ def authenticate_user(username, password):
     return user, access_token
 
 def get_current_user():
-    """Получить текущего пользователя из JWT токена"""
+    from flask_jwt_extended import get_jwt_identity
     user_id = int(get_jwt_identity())
     return User.query.get(user_id)
-
-def token_required(f):
-    """Декоратор для защиты эндпоинтов, требующих JWT токен"""
-    from functools import wraps
-    from flask import request, jsonify
-    from flask_jwt_extended import verify_jwt_in_request
-    
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        try:
-            verify_jwt_in_request()
-        except Exception as e:
-            return jsonify({'error': 'Invalid or missing token'}), 401
-        return f(*args, **kwargs)
-    return decorated

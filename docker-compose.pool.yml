@@ -1,0 +1,147 @@
+# Challenge Pool - статические контейнеры для динамического назначения
+# Порты: 30000-30029 (10 копий на 3 челленджа)
+
+version: '3.8'
+
+services:
+  # Challenge 1 Pool (порты 30000-30009)
+  ch1-pool-1:
+    build: ./challenges/ch1
+    container_name: cyberforge-ch1-pool-1
+    ports:
+      - "30000:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch1-pool-2:
+    build: ./challenges/ch1
+    container_name: cyberforge-ch1-pool-2
+    ports:
+      - "30001:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch1-pool-3:
+    build: ./challenges/ch1
+    container_name: cyberforge-ch1-pool-3
+    ports:
+      - "30002:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch1-pool-4:
+    build: ./challenges/ch1
+    container_name: cyberforge-ch1-pool-4
+    ports:
+      - "30003:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch1-pool-5:
+    build: ./challenges/ch1
+    container_name: cyberforge-ch1-pool-5
+    ports:
+      - "30004:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  # Challenge 2 Pool (порты 30010-30014)
+  ch2-pool-1:
+    build: ./challenges/ch2
+    container_name: cyberforge-ch2-pool-1
+    ports:
+      - "30010:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch2-pool-2:
+    build: ./challenges/ch2
+    container_name: cyberforge-ch2-pool-2
+    ports:
+      - "30011:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch2-pool-3:
+    build: ./challenges/ch2
+    container_name: cyberforge-ch2-pool-3
+    ports:
+      - "30012:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch2-pool-4:
+    build: ./challenges/ch2
+    container_name: cyberforge-ch2-pool-4
+    ports:
+      - "30013:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch2-pool-5:
+    build: ./challenges/ch2
+    container_name: cyberforge-ch2-pool-5
+    ports:
+      - "30014:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  # Challenge 3 Pool (порты 30020-30024)
+  ch3-pool-1:
+    build: ./challenges/ch3
+    container_name: cyberforge-ch3-pool-1
+    ports:
+      - "30020:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch3-pool-2:
+    build: ./challenges/ch3
+    container_name: cyberforge-ch3-pool-2
+    ports:
+      - "30021:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch3-pool-3:
+    build: ./challenges/ch3
+    container_name: cyberforge-ch3-pool-3
+    ports:
+      - "30022:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch3-pool-4:
+    build: ./challenges/ch3
+    container_name: cyberforge-ch3-pool-4
+    ports:
+      - "30023:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+  ch3-pool-5:
+    build: ./challenges/ch3
+    container_name: cyberforge-ch3-pool-5
+    ports:
+      - "30024:22"
+    restart: unless-stopped
+    networks:
+      - cyberforge
+
+networks:
+  cyberforge:
+    # external: true

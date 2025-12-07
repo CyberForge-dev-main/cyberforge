@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-import hashlib
 
 db = SQLAlchemy()
 
@@ -12,7 +11,6 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    submissions = db.relationship('Submission', backref='user', lazy=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -30,7 +28,6 @@ class Challenge(db.Model):
     port = db.Column(db.Integer)
     category = db.Column(db.String(50), default='General')
     difficulty = db.Column(db.String(20), default='Medium')
-    submissions = db.relationship('Submission', backref='challenge', lazy=True)
 
 class Submission(db.Model):
     __tablename__ = 'submissions'
@@ -41,3 +38,20 @@ class Submission(db.Model):
     is_correct = db.Column(db.Boolean, default=False)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
     solve_time = db.Column(db.Integer)
+    
+    user = db.relationship('User', backref='submissions')
+    challenge = db.relationship('Challenge', backref='submissions')
+
+class ChallengeInstance(db.Model):
+    __tablename__ = 'challenge_instances'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'), nullable=False)
+    assigned_port = db.Column(db.Integer, nullable=False)
+    container_name = db.Column(db.String(128), nullable=False)
+    status = db.Column(db.String(32), default='active', nullable=False)
+    assigned_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    released_at = db.Column(db.DateTime)
+    
+    user = db.relationship('User', backref='challenge_instances')
+    challenge = db.relationship('Challenge', backref='instances')
