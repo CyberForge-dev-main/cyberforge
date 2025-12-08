@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token
 from sqlalchemy.exc import IntegrityError
 
 def register_user(username, email, password):
+    """Register a new user. Returns (user, error)"""
     if User.query.filter_by(username=username).first():
         return None, "Username already exists"
     
@@ -24,14 +25,16 @@ def register_user(username, email, password):
         return None, "Registration failed"
 
 def authenticate_user(username, password):
+    """Authenticate user. Returns (token, error)"""
     user = User.query.filter_by(username=username).first()
     if not user or not user.check_password(password):
         return None, "Invalid credentials"
     
     access_token = create_access_token(identity=str(user.id))
-    return user, access_token
+    return access_token, None  # ← ИСПРАВЛЕНО: возвращает (token, error)
 
 def get_current_user():
+    """Get current authenticated user"""
     from flask_jwt_extended import get_jwt_identity
     user_id = int(get_jwt_identity())
     return User.query.get(user_id)
