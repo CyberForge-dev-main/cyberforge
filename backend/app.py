@@ -58,7 +58,7 @@ def login():
         return jsonify({"error": token}), 401
     return jsonify({
         "message": "Login successful",
-        "access_token": token,
+        "token": token,
         "user": {"id": user.id, "username": user.username}
     }), 200
 
@@ -134,7 +134,6 @@ def get_challenges():
     } for c in challenges]), 200
 
 @app.route('/api/leaderboard', methods=['GET'])
-@jwt_required()
 def get_leaderboard():
     users = User.query.all()
     result = []
@@ -208,80 +207,97 @@ def get_user_profile(username):
         "recent_activity": recent_activity
     }), 200
 
+# ============================================================
 # CHALLENGE POOL ENDPOINTS
-@app.route("/api/challenge/assign/<int:challenge_id>", methods=["POST"])
+# ============================================================
+
+@app.route('/api/challenge/assign/<int:challenge_id>', methods=['POST'])
 @jwt_required()
 def assign_challenge(challenge_id):
+    """Assign challenge container to user"""
     from pool_manager import pool_manager
+    
     user_id = get_jwt_identity()
     challenge = db.session.get(Challenge, challenge_id)
+    
     if not challenge:
-        return jsonify({"error": "Challenge not found"}), 404
-    instance = pool_manager.assign_container(user_id, challenge_id, db.session)
+        return jsonify({'error': 'Challenge not found'}), 404
+    
+    instance = pool_manager.assign_container(challenge_id, user_id, db.session)
+    
     if not instance:
-        return jsonify({"error": "No available containers"}), 503
+        return jsonify({'error': 'No available containers'}), 503
+    
     return jsonify({
-        "success": True,
-        "instance": {
-            "id": instance.id,
-            "container_name": instance.container_name,
-            "port": instance.port,
-            "ssh_command": f"ssh ctfuser@localhost -p {instance.port}"
+        'success': True,
+        'instance': {
+            'id': instance.id,
+            'container_name': instance.container_name,
+            'port': instance.port,
+            'ssh_command': f'ssh ctfuser@localhost -p {instance.port}',
+            'expires_at': instance.expires_at.isoformat()
         }
     }), 201
 
-@app.route("/api/challenge/release/<int:instance_id>", methods=["POST"])
+@app.route('/api/challenge/release/<int:instance_id>', methods=['POST'])
 @jwt_required()
 def release_challenge(instance_id):
+    """Release challenge container"""
     from pool_manager import pool_manager
+    
     user_id = get_jwt_identity()
     instance = db.session.get(ChallengeInstance, instance_id)
+    
     if not instance:
-        return jsonify({"error": "Instance not found"}), 404
+        return jsonify({'error': 'Instance not found'}), 404
+    
     if instance.user_id != user_id:
-        return jsonify({"error": "Not your instance"}), 403
-    success = pool_manager.release_container(instance_id, db.session)
-    return jsonify({"success": success}), 200 if success else 500
+        return jsonify({'error': 'Not your instance'}), 403
+    
+    success = pool_manager.release_container(instance.container_name)
+    
+    if success:
+        instance.status = 'stopped'
+        db.session.commit()
+    
+    return jsonify({'success': success}), 200 if success else 500
 
-@app.route("/api/challenge/my-instances", methods=["GET"])
+
+@app.route('/api/challenge/my-instances', methods=['GET'])
 @jwt_required()
 def get_my_instances():
+    """Get user's active containers"""
     user_id = get_jwt_identity()
-    instances = ChallengeInstance.query.filter_by(user_id=user_id, status="active").all()
+    instances = ChallengeInstance.query.filter_by(
+        user_id=user_id,
+        status='running'
+    ).all()
+    
     return jsonify({
-        "instances": [{
-            "id": i.id,
-            "challenge_id": i.challenge_id,
-            "container_name": i.container_name,
-            "port": i.port,
-            "ssh_command": f"ssh ctfuser@localhost -p {i.port}"
-        } for i in instances]
+        'instances': [
+            {
+                'id': inst.id,
+                'challenge_id': inst.challenge_id,
+                'container_name': inst.container_name,
+                'port': inst.port,
+                'ssh_command': f'ssh ctfuser@localhost -p {inst.port}',
+                'created_at': inst.created_at.isoformat(),
+                'expires_at': inst.expires_at.isoformat()
+            }
+            for inst in instances
+        ]
     }), 200
 
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({"error": "Not found"}), 404
 
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({"error": "Internal server error"}), 500
-
-def init_db():
-    with app.app_context():
-        db.create_all()
-        if Challenge.query.count() == 0:
-            challenges = [
-                Challenge(name="SSH Basics", description="Find the flag in the home directory", flag="flag{welcome_to_cyberforge_1}", points=100, port=2222, category="SSH", difficulty="Easy"),
-                Challenge(name="Hidden Files", description="Find the hidden flag file", flag="flag{linux_basics_are_fun}", points=100, port=2223, category="SSH", difficulty="Easy"),
-                Challenge(name="Directory Search", description="Search directories for the flag", flag="flag{find_and_conquer}", points=100, port=2224, category="SSH", difficulty="Medium"),
-                Challenge(name="Juice Shop Admin Access", description="Login as admin in Juice Shop. Submit admin email as flag format flag{admin@email}", flag="flag{admin@juice-sh.op}", points=150, port=3001, category="Web", difficulty="Easy"),
-                Challenge(name="Juice Shop SQL Injection", description="Bypass login using SQL injection in Juice Shop", flag="flag{sqli_success}", points=200, port=3001, category="Web", difficulty="Medium"),
-                Challenge(name="Juice Shop XSS", description="Execute XSS attack in Juice Shop", flag="flag{xss_executed}", points=200, port=3001, category="Web", difficulty="Medium"),
-            ]
-            for challenge in challenges:
-                db.session.add(challenge)
-            db.session.commit()
+# ============================================================
+# APPLICATION ENTRY POINT
+# ============================================================
 
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    with app.app_context():
+        db.create_all()
+        print("✅ Database tables created/verified")
+    
+    print("🚀 Starting Flask server on 0.0.0.0:5000")
+    print("="*50)
+    app.run(host='0.0.0.0', port=5000, debug=True)

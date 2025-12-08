@@ -51,3 +51,9 @@ archive/backup*/
 
 # Dumps (локальные, не коммитить)
 project_dump.txt
+
+# Archive directory
+archive/
+
+# Archive directory
+archive/

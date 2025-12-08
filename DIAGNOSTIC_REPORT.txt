@@ -1,0 +1,308 @@
+=========================================
+🔍 CYBERFORGE FULL DIAGNOSTIC
+=========================================
+
+=== 1. PROJECT STRUCTURE ===
+.
+├── archive
+│   ├── legacy
+│   └── old_fixes_20251206
+├── backend
+│   ├── app_fixed.py
+│   ├── app.py
+│   ├── app.py.backup
+│   ├── app.py.broken
+│   ├── auth.py
+│   ├── auth.py.backup
+│   ├── challenge_endpoints.txt
+│   ├── config.py
+│   ├── Dockerfile
+│   ├── instance
+│   ├── models_challenge_instance.py
+│   ├── models.py
+│   ├── models.py.backup
+│   ├── pool_manager.py
+│   ├── pool_manager.py.before_docker_api
+│   └── requirements.txt
+├── challenges
+│   ├── ch1
+│   ├── ch2
+│   └── ch3
+├── DIAGNOSTIC_REPORT.txt
+├── docker-compose.pool.yml
+├── docker-compose.yml
+├── docker-compose.yml.before_docker_socket
+├── docs
+│   └── CURRENT_STATE.md
+├── dump_system.sh
+├── LICENSE
+├── Makefile
+├── project_dump.txt
+├── README.md
+├── scripts
+│   ├── check_system.sh
+│   ├── full_diagnostic.sh
+│   ├── health_check.sh
+│   ├── README.md
+│   ├── smoke_test.sh
+│   ├── test_rate_limit.sh
+│   ├── test.sh
+│   └── user_flow_full.sh
+├── step2_verification.log
+├── step3_verification.log
+└── website
+    ├── Dockerfile
+    ├── index.html
+    ├── index.js
+    └── package.json
+
+13 directories, 39 files
+
+=== 2. DOCKER CONTAINERS STATUS ===
+NAME                    IMAGE                          COMMAND                  SERVICE       CREATED         STATUS         PORTS
+cyberforge-backend      cyberforge-backend             "python app.py"          backend       4 minutes ago   Up 4 minutes   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
+cyberforge-ch1          cyberforge-challenge-1         "/usr/sbin/sshd -D"      challenge-1   4 minutes ago   Up 4 minutes   0.0.0.0:2222->22/tcp, [::]:2222->22/tcp
+cyberforge-ch2          cyberforge-challenge-2         "/usr/sbin/sshd -D"      challenge-2   4 minutes ago   Up 4 minutes   0.0.0.0:2223->22/tcp, [::]:2223->22/tcp
+cyberforge-ch3          cyberforge-challenge-3         "/usr/sbin/sshd -D"      challenge-3   4 minutes ago   Up 4 minutes   0.0.0.0:2224->22/tcp, [::]:2224->22/tcp
+cyberforge-db           postgres:15                    "docker-entrypoint.s…"   db            6 minutes ago   Up 6 minutes   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+cyberforge-juice-shop   bkimminich/juice-shop:latest   "/nodejs/bin/node /j…"   juice-shop    4 minutes ago   Up 4 minutes   0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+cyberforge-website      nginx:latest                   "/docker-entrypoint.…"   website       4 minutes ago   Up 4 minutes   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp
+
+=== 3. DOCKER COMPOSE CONFIG (backend section) ===
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cyberforge-backend
+    ports:
+    - 5000:5000
+    volumes:
+    - ./backend:/app
+    - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+    - cyberforge-network
+    restart: always
+  challenge-1:
+    build:
+      context: ./challenges/ch1
+      dockerfile: Dockerfile
+    container_name: cyberforge-ch1
+    ports:
+    - '2222:22'
+    networks:
+    - cyberforge-network
+    stdin_open: true
+    tty: true
+
+=== 4. BACKEND FILES ===
+-rw-rw-r-- 1 cybersec cybersec  165 Dec  7 14:02 backend/app_fixed.py
+-rw-rw-r-- 1 cybersec cybersec  12K Dec  7 18:08 backend/app.py
+-rw-rw-r-- 1 cybersec cybersec 1.2K Dec  7 13:46 backend/auth.py
+-rw-rw-r-- 1 cybersec cybersec  486 Dec  7 18:28 backend/config.py
+-rw-rw-r-- 1 cybersec cybersec 1.7K Dec  7 13:07 backend/models_challenge_instance.py
+-rw-rw-r-- 1 cybersec cybersec 3.6K Dec  7 17:21 backend/models.py
+-rw-rw-r-- 1 cybersec cybersec 7.1K Dec  7 19:25 backend/pool_manager.py
+
+=== 5. BACKEND REQUIREMENTS ===
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-JWT-Extended==4.5.2
+Flask-CORS==4.0.0
+psycopg2-binary==2.9.7
+python-dotenv==1.0.0
+werkzeug==2.3.7
+docker==6.1.3
+
+=== 6. DATABASE CHECK ===
+Did not find any relations.
+
+=== 7. BACKEND LOGS (last 30) ===
+cyberforge-backend  |  * Serving Flask app 'app'
+cyberforge-backend  |  * Debug mode: off
+cyberforge-backend  | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+cyberforge-backend  |  * Running on all addresses (0.0.0.0)
+cyberforge-backend  |  * Running on http://127.0.0.1:5000
+cyberforge-backend  |  * Running on http://172.20.0.5:5000
+cyberforge-backend  | [33mPress CTRL+C to quit[0m
+cyberforge-backend  | 172.20.0.1 - - [07/Dec/2025 16:32:02] "[35m[1mPOST /api/register HTTP/1.1[0m" 201 -
+cyberforge-backend  | 172.20.0.1 - - [07/Dec/2025 16:32:03] "POST /api/login HTTP/1.1" 200 -
+cyberforge-backend  | 172.20.0.1 - - [07/Dec/2025 16:32:03] "[35m[1mPOST /api/challenge/assign/1 HTTP/1.1[0m" 503 -
+
+=== 8. DOCKER NETWORK ===
+78718bf7597f   cyberforge                      bridge    local
+f875d2632b72   cyberforge_cyberforge           bridge    local
+a5c734e601d3   cyberforge_cyberforge-network   bridge    local
+
+=== 9. DOCKER IMAGES ===
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+cyberforge-backend:latest       080cbf4acf0c        265MB         63.6MB   U    
+cyberforge-ch1-pool-1:latest    1a297a4bff20        403MB          118MB        
+cyberforge-ch1-pool-2:latest    885ee9dc4221        403MB          118MB        
+cyberforge-ch1-pool-3:latest    a2cb72432c10        403MB          118MB        
+cyberforge-ch1-pool-4:latest    6179f8412b53        403MB          118MB        
+cyberforge-ch1-pool-5:latest    974a43480ef5        403MB          118MB        
+cyberforge-ch1:latest           e422627d2d46        247MB         80.4MB        
+cyberforge-ch2-pool-1:latest    3a5a8dc79338        403MB          118MB        
+cyberforge-ch2-pool-2:latest    52b93202f070        403MB          118MB        
+cyberforge-ch2-pool-3:latest    ae1c46f92da1        403MB          118MB        
+cyberforge-ch2-pool-4:latest    ca222a9da63d        403MB          118MB        
+cyberforge-ch2-pool-5:latest    3c3af3d90705        403MB          118MB        
+cyberforge-ch2:latest           08ff85ac5c44        247MB         80.4MB        
+cyberforge-ch3-pool-1:latest    f26ed864bec7        403MB          118MB        
+cyberforge-ch3-pool-2:latest    687e389df8f3        403MB          118MB        
+cyberforge-ch3-pool-3:latest    b092101edde5        403MB          118MB        
+cyberforge-ch3-pool-4:latest    9637e843972c        403MB          118MB        
+cyberforge-ch3-pool-5:latest    37f247b3c344        403MB          118MB        
+cyberforge-ch3:latest           75db5ef8c806        247MB         80.4MB        
+cyberforge-challenge-1:latest   9cc5fdcad497        403MB          118MB   U    
+cyberforge-challenge-2:latest   077cb78b88f6        403MB          118MB   U    
+cyberforge-challenge-3:latest   f53ddc0030fa        403MB          118MB   U    
+cyberforge-website:latest       5fcf3dce5930        294MB         70.6MB        
+cyberforge_backend:latest       e6fa1a64ca53        257MB         61.9MB        
+cyberforge_challenge-1:latest   ecd47d86d3ea        403MB          118MB        
+cyberforge_challenge-2:latest   1988ebc90ea4        403MB          118MB        
+cyberforge_challenge-3:latest   091cbd8d75a1        403MB          118MB        
+
+=== 10. API HEALTH CHECK ===
+{
+  "message": "Backend is running",
+  "status": "OK"
+}
+
+=== 11. CHALLENGES API ===
+[
+  {
+    "category": "SSH",
+    "description": "Find the flag in the home directory",
+    "difficulty": "Easy",
+    "id": 1,
+    "name": "SSH Basics",
+    "points": 100,
+    "port": 2222
+  },
+  {
+    "category": "SSH",
+    "description": "Find the hidden flag file",
+    "difficulty": "Easy",
+    "id": 2,
+    "name": "Hidden Files",
+    "points": 100,
+    "port": 2223
+  },
+  {
+    "category": "SSH",
+    "description": "Search directories for the flag",
+    "difficulty": "Medium",
+    "id": 3,
+    "name": "Directory Search",
+    "points": 100,
+    "port": 2224
+  },
+  {
+    "category": "Web",
+    "description": "Login as admin in Juice Shop. Submit admin email as flag format: flag{admin_email}",
+    "difficulty": "Easy",
+    "id": 4,
+    "name": "Juice Shop: Admin Access",
+    "points": 150,
+    "port": 3001
+  },
+  {
+    "category": "Web",
+    "description": "Bypass login using SQL injection in Juice Shop",
+    "difficulty": "Medium",
+    "id": 5,
+    "name": "Juice Shop: SQL Injection",
+    "points": 200,
+    "port": 3001
+  },
+  {
+    "category": "Web",
+    "description": "Execute XSS attack in Juice Shop",
+    "difficulty": "Medium",
+    "id": 6,
+    "name": "Juice Shop: XSS",
+    "points": 200,
+    "port": 3001
+  }
+]
+
+=== 12. STATIC CHALLENGE CONTAINERS ===
+NAMES                   STATUS         PORTS
+cyberforge-juice-shop   Up 4 minutes   0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+cyberforge-ch3          Up 4 minutes   0.0.0.0:2224->22/tcp, [::]:2224->22/tcp
+cyberforge-ch1          Up 4 minutes   0.0.0.0:2222->22/tcp, [::]:2222->22/tcp
+cyberforge-ch2          Up 4 minutes   0.0.0.0:2223->22/tcp, [::]:2223->22/tcp
+
+=== 13. POOL_MANAGER.PY (first 50 lines) ===
+import subprocess
+import json
+from datetime import datetime, timedelta
+from models import ChallengeInstance
+
+class PoolManager:
+    """Manages dynamic challenge container creation via Docker CLI"""
+    
+    def __init__(self):
+        self.network_name = 'cyberforge_cyberforge-network'
+        try:
+            # Проверка Docker CLI доступности
+            result = subprocess.run(['docker', 'ps'], capture_output=True, text=True)
+            if result.returncode == 0:
+                print("✅ Docker CLI available")
+            else:
+                print(f"❌ Docker CLI error: {result.stderr}")
+        except Exception as e:
+            print(f"❌ Docker CLI not available: {e}")
+    
+    # Challenge configuration
+    CHALLENGE_CONFIG = {
+        1: {
+            'image': 'cyberforge-ch1:latest',
+            'name_prefix': 'cyberforge-ch1-dynamic',
+            'port_range': (30000, 30099)
+        },
+        2: {
+            'image': 'cyberforge-ch2:latest',
+            'name_prefix': 'cyberforge-ch2-dynamic',
+            'port_range': (30100, 30199)
+        },
+        3: {
+            'image': 'cyberforge-ch3:latest',
+            'name_prefix': 'cyberforge-ch3-dynamic',
+            'port_range': (30200, 30299)
+        },
+    }
+    
+    def find_free_port(self, challenge_id: int, db_session):
+        """Find free port for challenge"""
+        if challenge_id not in self.CHALLENGE_CONFIG:
+            return None
+        
+        start_port, end_port = self.CHALLENGE_CONFIG[challenge_id]['port_range']
+        
+        # Get all assigned ports
+        assigned = db_session.query(ChallengeInstance).filter_by(
+            challenge_id=challenge_id,
+            status='active'
+
+=== 14. APP.PY ROUTES (assign/release) ===
+214:def assign_challenge(challenge_id):
+235:def release_challenge(instance_id):
+
+=== 15. MODELS.PY (ChallengeInstance) ===
+class ChallengeInstance(db.Model):
+    __tablename__ = 'challenge_instances'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'), nullable=False)
+    container_name = db.Column(db.String(100), unique=True, nullable=False)
+    port = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='running')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+
+=========================================
+✅ DIAGNOSTIC COMPLETE!
+=========================================

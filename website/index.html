@@ -379,7 +379,7 @@
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || 'Login failed');
                     
-                    authToken = data.access_token;
+                    authToken = data.token;
                     currentUser = data.user;
                     localStorage.setItem('access_token', authToken);
                     localStorage.setItem('user', JSON.stringify(currentUser));

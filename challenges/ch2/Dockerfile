@@ -6,9 +6,9 @@ RUN useradd -m -s /bin/bash ctfuser
 RUN echo 'ctfuser:password123' | chpasswd
 
 RUN mkdir -p /home/ctfuser/challenge
-RUN echo "flag{linux_basics_are_fun}" > /home/ctfuser/challenge/flag.txt
-RUN chmod 600 /home/ctfuser/challenge/flag.txt
-RUN chown ctfuser:ctfuser /home/ctfuser/challenge/flag.txt
+RUN echo "flag{hidden_treasure}" > /home/ctfuser/challenge/.hidden_flag
+RUN chmod 644 /home/ctfuser/challenge/.hidden_flag
+RUN chown ctfuser:ctfuser /home/ctfuser/challenge/.hidden_flag
 
 RUN mkdir -p /run/sshd
 RUN sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config

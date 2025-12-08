@@ -1,102 +1,118 @@
+#!/usr/bin/env python3
+"""Challenge Container Pool Manager"""
+
+import subprocess
 from datetime import datetime, timedelta
 from models import ChallengeInstance
 
+
 class PoolManager:
-    """Manages challenge container pool assignments"""
+    """Manages dynamic challenge container creation"""
     
-    # Challenge pool configuration
-    POOL_CONFIG = {
-        1: {'name_prefix': 'cyberforge-ch1-pool', 'ports': list(range(30000, 30005))},
-        2: {'name_prefix': 'cyberforge-ch2-pool', 'ports': list(range(30010, 30015))},
-        3: {'name_prefix': 'cyberforge-ch3-pool', 'ports': list(range(30020, 30025))},
+    def __init__(self):
+        self.network_name = 'cyberforge_cyberforge-network'
+        print("🔧 PoolManager initialized")
+    
+    CHALLENGE_CONFIG = {
+        1: {'image': 'cyberforge-challenge-1', 'name_prefix': 'cyberforge-ch1-dynamic', 'port_range': (30000, 30099)},
+        2: {'image': 'cyberforge-challenge-2', 'name_prefix': 'cyberforge-ch2-dynamic', 'port_range': (30100, 30199)},
+        3: {'image': 'cyberforge-challenge-3', 'name_prefix': 'cyberforge-ch3-dynamic', 'port_range': (30200, 30299)},
     }
     
-    @staticmethod
-    def get_available_container(challenge_id: int, db_session):
-        """Find available container from pool"""
-        if challenge_id not in PoolManager.POOL_CONFIG:
+    def find_free_port(self, challenge_id, db_session):
+        """Find available port"""
+        if challenge_id not in self.CHALLENGE_CONFIG:
             return None
-        
-        config = PoolManager.POOL_CONFIG[challenge_id]
-        
-        # Get all assigned ports for this challenge
+        start_port, end_port = self.CHALLENGE_CONFIG[challenge_id]['port_range']
         assigned = db_session.query(ChallengeInstance).filter_by(
-            challenge_id=challenge_id,
-            status='active'
+            challenge_id=challenge_id, 
+            status='running'
         ).all()
-        
         assigned_ports = {inst.port for inst in assigned}
-        
-        # Find first available port
-        for port in config['ports']:
+        for port in range(start_port, end_port):
             if port not in assigned_ports:
-                container_name = f"{config['name_prefix']}-{port}"
-                return {
-                    'name': container_name,
-                    'port': port,
-                    'challenge_id': challenge_id
-                }
-        
+                return port
         return None
     
-    @staticmethod
-    def assign_container(user_id: int, challenge_id: int, db_session):
-        """Assign container to user"""
-        # Check if user already has active instance
+    def assign_container(self, challenge_id, user_id, db_session):
+        """Create dynamic container"""
+        print(f"🔧 assign_container: challenge={challenge_id}, user={user_id}")
+        
         existing = db_session.query(ChallengeInstance).filter_by(
             user_id=user_id,
             challenge_id=challenge_id,
-            status='active'
+            status='running'
         ).first()
         
         if existing:
+            print(f"✅ Existing container: {existing.container_name}")
             return existing
         
-        # Find available container
-        container = PoolManager.get_available_container(challenge_id, db_session)
-        if not container:
+        if challenge_id not in self.CHALLENGE_CONFIG:
+            print(f"❌ Challenge {challenge_id} not in config")
             return None
         
-        # Create instance
-        instance = ChallengeInstance(
-            user_id=user_id,
-            challenge_id=challenge_id,
-            port=container['port'],
-            container_name=container['name'],
-            status='active',
-            created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(hours=2)
-        )
+        config = self.CHALLENGE_CONFIG[challenge_id]
+        port = self.find_free_port(challenge_id, db_session)
         
-        db_session.add(instance)
-        db_session.commit()
+        if not port:
+            print("❌ No free ports")
+            return None
         
-        return instance
+        container_name = f"{config['name_prefix']}-user{user_id}-{port}"
+        
+        try:
+            cmd = [
+                'docker', 'run', '-d',
+                '--name', container_name,
+                '--network', self.network_name,
+                '-p', f'{port}:22',
+                '--rm',
+                config['image']
+            ]
+            
+            print(f"🚀 Running: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode != 0:
+                print(f"❌ Docker error: {result.stderr}")
+                return None
+            
+            container_id = result.stdout.strip()
+            print(f"✅ Container created: {container_name}")
+            
+            instance = ChallengeInstance(
+                user_id=user_id,
+                challenge_id=challenge_id,
+                container_name=container_name,
+                port=port,
+                status='running',
+                expires_at=datetime.utcnow() + timedelta(hours=2)
+            )
+            
+            db_session.add(instance)
+            db_session.commit()
+            
+            return instance
+            
+        except Exception as e:
+            print(f"❌ Exception: {e}")
+            return None
     
-    @staticmethod
-    def release_container(instance_id: int, db_session) -> bool:
-        """Release container"""
-        instance = db_session.query(ChallengeInstance).filter_by(id=instance_id).first()
-        if not instance:
+    def release_container(self, container_name):
+        """Stop container"""
+        try:
+            result = subprocess.run(
+                ['docker', 'stop', container_name],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            return result.returncode == 0
+        except Exception as e:
+            print(f"❌ Release error: {e}")
             return False
-        
-        instance.status = 'released'
-        db_session.commit()
-        return True
-    
-    @staticmethod
-    def cleanup_expired(db_session):
-        """Cleanup expired instances"""
-        expired = db_session.query(ChallengeInstance).filter(
-            ChallengeInstance.expires_at < datetime.utcnow(),
-            ChallengeInstance.status == 'active'
-        ).all()
-        
-        for instance in expired:
-            instance.status = 'expired'
-        
-        db_session.commit()
-        return len(expired)
 
-# Export singleton
+
+# CRITICAL: Export singleton instance
 pool_manager = PoolManager()
