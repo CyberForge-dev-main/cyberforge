@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: cyberforge-db
+    environment:
+      POSTGRES_USER: ctf_admin
+      POSTGRES_PASSWORD: ctf_secure_pass_2024
+      POSTGRES_DB: cyberforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cyberforge-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ctf_admin -d cyberforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cyberforge-backend
+    env_file:
+      - .env
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_ACCESS_TOKEN_EXPIRES=${JWT_ACCESS_TOKEN_EXPIRES}
+      - FLASK_ENV=${FLASK_ENV}
+      - FLASK_DEBUG=${FLASK_DEBUG}
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cyberforge-network
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+
+  challenge-1:
+    build:
+      context: ./challenges/ch1
+      dockerfile: Dockerfile
+    container_name: cyberforge-ch1
+    ports:
+      - "2222:22"
+    networks:
+      - cyberforge-network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  challenge-2:
+    build:
+      context: ./challenges/ch2
+      dockerfile: Dockerfile
+    container_name: cyberforge-ch2
+    ports:
+      - "2223:22"
+    networks:
+      - cyberforge-network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  challenge-3:
+    build:
+      context: ./challenges/ch3
+      dockerfile: Dockerfile
+    container_name: cyberforge-ch3
+    ports:
+      - "2224:22"
+    networks:
+      - cyberforge-network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    container_name: cyberforge-juice-shop
+    ports:
+      - "3001:3000"
+    networks:
+      - cyberforge-network
+    restart: unless-stopped
+
+  website:
+    image: nginx:latest
+    container_name: cyberforge-website
+    ports:
+      - "3000:80"
+    volumes:
+      - ./website:/usr/share/nginx/html:ro
+    networks:
+      - cyberforge-network
+    restart: unless-stopped
+
+networks:
+  cyberforge-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
