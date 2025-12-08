@@ -62,6 +62,7 @@ def login():
         "user": {"id": user.id, "username": user.username}
     }), 200
 
+@limiter.limit("5 per minute")
 @app.route('/api/submit_flag', methods=['POST'])
 @jwt_required()
 def submit_flag():
