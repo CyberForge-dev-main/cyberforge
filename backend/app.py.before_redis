@@ -1,10 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-import redis
-
 from config import Config
 from models import db, User, Challenge, Submission, ChallengeInstance
 from auth import register_user, authenticate_user, get_current_user
@@ -27,25 +23,6 @@ def is_rate_limited(user_id: int, challenge_id: int) -> bool:
     return False
 
 app = Flask(__name__)
-
-# Redis для rate limiting
-try:
-    redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
-    redis_client.ping()
-    REDIS_AVAILABLE = True
-    print("✅ Redis connected")
-except Exception as e:
-    REDIS_AVAILABLE = False
-    print(f"⚠️  Redis unavailable: {e}")
-
-# Rate Limiter
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    storage_uri="redis://redis:6379" if REDIS_AVAILABLE else "memory://",
-    default_limits=["200 per day", "50 per hour"]
-)
-
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
