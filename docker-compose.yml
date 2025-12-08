@@ -16,6 +16,12 @@ services:
     networks:
       - cyberforge-network
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ctf_admin -d cyberforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     container_name: cyberforge-redis
@@ -30,11 +36,6 @@ services:
       timeout: 5s
       retries: 5
 
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ctf_admin -d cyberforge"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   backend:
     build:
