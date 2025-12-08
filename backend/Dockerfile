@@ -1,23 +1,25 @@
 FROM python:3.11-slim
 
-# Install Docker CLI
-RUN apt-get update && \
-    apt-get install -y docker.io && \
-    rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# Copy requirements
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY *.py .
+# Copy application code
+COPY . .
 
-# Create docker group with GID 984 (matches host)
-RUN groupadd -g 984 docker 2>/dev/null || true && \
-    usermod -aG docker root
-
+# Expose port
 EXPOSE 5000
 
-CMD ["python", "-u", "app.py"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD python -c "import requests; requests.get('http://localhost:5000/api/health')" || exit 1
+
+# Run with Gunicorn (production)
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
