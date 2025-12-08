@@ -16,20 +16,6 @@ services:
     networks:
       - cyberforge-network
     restart: always
-  redis:
-    image: redis:7-alpine
-    container_name: cyberforge-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - cyberforge-network
-    restart: always
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ctf_admin -d cyberforge"]
       interval: 5s
