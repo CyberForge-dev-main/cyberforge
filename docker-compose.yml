@@ -96,7 +96,7 @@ services:
       - cyberforge-network
     restart: unless-stopped
 
-website:
+  website:
     image: nginx:latest
     container_name: cyberforge-website
     ports:
@@ -108,7 +108,10 @@ website:
       - cyberforge-network
     restart: unless-stopped
     depends_on:
-      - backendnetworks:
+      - backend
+
+
+networks:
   cyberforge-network:
     driver: bridge
 
