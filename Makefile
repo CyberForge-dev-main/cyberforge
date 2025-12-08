@@ -31,3 +31,9 @@ health:
 
 dump:
 	@./scripts/dump_system.sh
+
+backup:
+	@./scripts/backup.sh
+
+restore:
+	@./scripts/restore.sh $(TIMESTAMP)
