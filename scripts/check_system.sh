@@ -1,52 +1,64 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# CyberForge v4 Full System Check
-# Проверяет состояние всех компонентов системы
+BASE_URL="${BASE_URL:-http://localhost:5000}"
+TS="$(date +%s)"
+USER="${CF_USER:-check_${TS}}"
+PASS="${CF_PASS:-Pass123}"
+EMAIL="${USER}@test.local"
 
 echo "╔═══════════════════════════════════════════════════╗"
 echo "║      CyberForge v4 System Check                   ║"
 echo "╚═══════════════════════════════════════════════════╝"
 echo ""
 
-# Docker Containers
 echo "═══ Docker Containers ═══"
 docker compose ps
 echo ""
 
-# Backend Health
 echo "═══ Backend Health ═══"
-curl -s http://localhost:5000/api/health | jq .
+curl -sS "$BASE_URL/api/health" | jq .
 echo ""
 
-# Git Status
 echo "═══ Git Status ═══"
 git log --oneline -3
 echo ""
 
-# API Smoke Test
 echo "═══ API Smoke Test ═══"
-TOKEN=$(curl -s -X POST http://localhost:5000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"user2","password":"Pass123"}' | jq -r '.access_token')
 
+# 1) Register (idempotent-ish for diagnostics)
+curl -sS -X POST "$BASE_URL/api/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"$USER\",\"email\":\"$EMAIL\",\"password\":\"$PASS\"}" >/dev/null || true
+
+# 2) Login (STRICT): token must exist, otherwise script fails here
+TOKEN="$(
+  curl -sS -X POST "$BASE_URL/api/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$USER\",\"password\":\"$PASS\"}" \
+  | jq -re '.access_token // empty'
+)"
 echo "Login Token: ${TOKEN:0:20}..."
 echo ""
 
-CHALLENGES=$(curl -s http://localhost:5000/api/challenges | jq '.[] | .id' | wc -l)
+CHALLENGES="$(curl -sS "$BASE_URL/api/challenges" | jq 'length')"
 echo "Challenges Count: $CHALLENGES"
 
-SUBMIT=$(curl -s -X POST http://localhost:5000/api/submit_flag \
+RESP="$(curl -sS -w "\n%{http_code}" -X POST "$BASE_URL/api/submit_flag" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"challenge_id":1,"flag":"flag{welcome_to_ssh}"}' | jq '.correct')
-echo "Submit Flag Success: $SUBMIT"
+  -d '{"challenge_id":1,"flag":"flag{welcome_to_ssh}"}')"
 
-LEADERBOARD=$(curl -s http://localhost:5000/api/leaderboard \
-  -H "Authorization: Bearer $TOKEN" | jq 'length')
+CODE="$(echo "$RESP" | tail -n1)"
+BODY="$(echo "$RESP" | head -n-1)"
+
+echo "Submit HTTP: $CODE"
+echo "$BODY" | jq -r '.correct // empty' >/dev/null && echo "Submit Flag Success: $(echo "$BODY" | jq -r '.correct')" || echo "Submit Flag Success: <non-json>"
+
+LEADERBOARD="$(curl -sS "$BASE_URL/api/leaderboard" -H "Authorization: Bearer $TOKEN" | jq 'length')"
 echo "Leaderboard Users: $LEADERBOARD"
 echo ""
 
-# SSH ch1 Test
 echo "═══ SSH ch1 Flag ═══"
 sshpass -p 'password123' ssh -p 2222 -o StrictHostKeyChecking=no ctfuser@localhost "cat ~/challenge/flag.txt"
 echo ""

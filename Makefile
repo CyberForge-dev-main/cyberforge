@@ -31,7 +31,7 @@ health:
 	@./scripts/check_system.sh
 
 dump:
-	@./scripts/dump_system.sh
+	@./dump_system.sh
 
 backup:
 	@./scripts/backup.sh
