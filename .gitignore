@@ -68,3 +68,4 @@ DIAGNOSTIC_REPORT*.txt
 
 # Diagnostics artifacts (generated)
 dumps/diagnostics/
+fill_gtm_cyberforge.py

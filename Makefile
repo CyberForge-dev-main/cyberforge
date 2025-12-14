@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 PROJECT_NAME=cyberforge
 
 .PHONY: up down restart logs ps test health dump
@@ -37,3 +38,9 @@ backup:
 
 restore:
 	@./scripts/restore.sh $(TIMESTAMP)
+
+
+.PHONY: test_fast
+test_fast:
+	@./scripts/check_system.sh
+	@./scripts/user_flow_full.sh
