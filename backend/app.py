@@ -7,6 +7,7 @@ import redis
 from config import Config
 from models import db, User, Challenge, Submission, ChallengeInstance
 from auth import register_user, authenticate_user, get_current_user
+from pool_manager import pool_manager
 from time import time
 import os
 
@@ -65,6 +66,7 @@ def is_rate_limited(user_id: int, challenge_id: int) -> bool:
 # ENDPOINTS
 # ======================
 
+@limiter.exempt
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "OK", "message": "Backend is running"}), 200
@@ -96,7 +98,7 @@ def login():
     return jsonify({"access_token": token}), 200
 
 @app.route('/api/challenges', methods=['GET'])
-@jwt_required()
+
 def get_challenges():
     challenges = Challenge.query.all()
     return jsonify([{
@@ -162,7 +164,7 @@ def submit_flag():
     }), 200
 
 @app.route('/api/leaderboard', methods=['GET'])
-@jwt_required()
+
 def leaderboard():
     results = db.session.query(
         User.username,
@@ -241,6 +243,98 @@ def user_profile(username):
             "difficulty": c.difficulty,
             "points": c.points
         } for c in solved_challenges]
+    }), 200
+
+
+# ======================
+# CHALLENGE ORCHESTRATOR ENDPOINTS
+# ======================
+
+@app.route('/api/challenge/<int:challenge_id>/start', methods=['POST'])
+@jwt_required()
+def start_challenge(challenge_id):
+    """Start dynamic challenge container for user"""
+    user_id = get_jwt_identity()
+    
+    challenge = Challenge.query.get(challenge_id)
+    if not challenge:
+        return jsonify({"error": "Challenge not found"}), 404
+    
+    if challenge_id not in [1, 2, 3]:
+        return jsonify({
+            "error": "This challenge does not support dynamic containers",
+            "message": "Use the static port provided in challenge description"
+        }), 400
+    
+    instance = pool_manager.assign_container(challenge_id, user_id, db.session)
+    
+    if not instance:
+        return jsonify({"error": "Failed to start container. No free ports available."}), 500
+    
+    return jsonify({
+        "message": "Challenge container started successfully",
+        "container": instance.to_dict(),
+        "ssh_command": f"ssh ctfuser@localhost -p {instance.port}",
+        "password": "password123",
+        "expires_at": instance.expires_at.isoformat(),
+        "time_remaining": "2 hours"
+    }), 200
+
+
+@app.route('/api/challenge/<int:challenge_id>/stop', methods=['POST'])
+@jwt_required()
+def stop_challenge(challenge_id):
+    """Stop user's challenge container"""
+    user_id = get_jwt_identity()
+    
+    instance = ChallengeInstance.query.filter_by(
+        user_id=user_id,
+        challenge_id=challenge_id,
+        status='running'
+    ).first()
+    
+    if not instance:
+        return jsonify({"error": "No running container found for this challenge"}), 404
+    
+    success = pool_manager.release_container(instance.container_name)
+    
+    if success:
+        instance.status = 'stopped'
+        db.session.commit()
+        return jsonify({
+            "message": "Container stopped successfully",
+            "container_name": instance.container_name
+        }), 200
+    else:
+        return jsonify({"error": "Failed to stop container"}), 500
+
+
+@app.route('/api/challenge/<int:challenge_id>/status', methods=['GET'])
+@jwt_required()
+def challenge_status(challenge_id):
+    """Get user's challenge container status"""
+    user_id = get_jwt_identity()
+    
+    instance = ChallengeInstance.query.filter_by(
+        user_id=user_id,
+        challenge_id=challenge_id
+    ).order_by(ChallengeInstance.created_at.desc()).first()
+    
+    if not instance:
+        return jsonify({
+            "status": "not_started",
+            "message": "No container for this challenge"
+        }), 200
+    
+    from datetime import datetime
+    if instance.status == 'running' and instance.expires_at < datetime.utcnow():
+        instance.status = 'expired'
+        db.session.commit()
+    
+    return jsonify({
+        "status": instance.status,
+        "container": instance.to_dict() if instance.status == 'running' else None,
+        "message": f"Container is {instance.status}"
     }), 200
 
 # ======================
