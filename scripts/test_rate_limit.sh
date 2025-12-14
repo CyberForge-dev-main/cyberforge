@@ -9,6 +9,8 @@ TEST_USER="ratelimit_test_$(date +%s)"
 TEST_PASS="Pass123"
 
 echo "=== Rate Limit Test for /api/submit_flag ==="
+
+sleep 61 # reset IP-based limiter window
 echo
 
 # 1. Register test user
@@ -64,3 +66,6 @@ else
 fi
 
 echo -e "\n=== Test Complete ==="
+
+echo "Cooldown: waiting 65s to avoid cross-test rate-limit interference..."
+sleep 65
