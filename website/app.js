@@ -117,6 +117,7 @@ async function loadChallenges() {
             const isSolved = solvedChallenges.has(c.id);
             const catClass = `badge-${c.category.toLowerCase()}`;
             const diffClass = `badge-${c.difficulty.toLowerCase()}`;
+            const isDynamic = [1, 2, 3].includes(c.id); // Challenges with dynamic containers
             
             return `
                 <div class="challenge-card ${isSolved ? 'solved' : ''}" id="challenge-${c.id}">
@@ -128,15 +129,22 @@ async function loadChallenges() {
                     <p>${escapeHtml(c.description)}</p>
                     <div class="meta">
                         <span class="points">${c.points} pts</span>
-                        <span class="port">Port: ${c.port}</span>
+                        ${!isDynamic ? `<span class="port">Port: ${c.port}</span>` : ''}
                     </div>
-                    ${c.category === 'SSH' ? `
+                    
+                    ${isDynamic ? `
+                        <div class="dynamic-status"></div>
+                        <button class="btn btn-primary start-challenge-btn" onclick="startChallenge(${c.id})" style="width:100%;margin:10px 0">
+                            🚀 Start Challenge Container
+                        </button>
+                    ` : c.category === 'SSH' ? `
                         <div style="background:rgba(255,193,7,0.1);border:1px solid #ffc107;padding:10px;border-radius:5px;margin:10px 0;font-size:0.9em">
                             <strong style="color:#ffc107">📡 SSH Connection:</strong><br>
                             <code>ssh ctf@<span class="server-ip">${window.location.hostname}</span> -p ${c.port}</code><br>
                             <span style="color:#aaa">Password: <code>password123</code></span>
                         </div>
                     ` : ''}
+                    
                     ${!isSolved ? `
                         <div class="flag-form">
                             <input type="text" id="flag-input-${c.id}" placeholder="flag{...}">
@@ -148,6 +156,16 @@ async function loadChallenges() {
                     `}
                 </div>
             `;
+        }).join('');
+        
+        // Check status for dynamic challenges
+        [1, 2, 3].forEach(id => checkChallengeStatus(id));
+        
+    } catch (err) {
+        document.getElementById('challenges-grid').innerHTML = 
+            `<div style="color:#ff4757;text-align:center">Error loading challenges: ${escapeHtml(err.message)}</div>`;
+    }
+}
         }).join('');
     } catch (err) {
         console.error('Error loading challenges:', err);
@@ -250,6 +268,145 @@ function showSuccess(msg) {
 function hideMessages() {
     document.getElementById('auth-error').classList.add('hidden');
     document.getElementById('auth-success').classList.add('hidden');
+}
+
+
+// ======================
+// DYNAMIC CHALLENGE MANAGEMENT
+// ======================
+
+let containerTimers = {}; // Store timers for each challenge
+
+async function startChallenge(challengeId) {
+    const btn = document.querySelector(`#challenge-${challengeId} .start-challenge-btn`);
+    const statusDiv = document.querySelector(`#challenge-${challengeId} .dynamic-status`);
+    
+    if (!btn || !statusDiv) return;
+    
+    btn.disabled = true;
+    btn.textContent = 'Starting...';
+    statusDiv.innerHTML = '<span style="color:#ffa502">🔄 Starting container...</span>';
+    
+    try {
+        const res = await fetch(`${CONFIG.API_URL}/challenge/${challengeId}/start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+            statusDiv.innerHTML = `<span style="color:#ff4757">❌ ${escapeHtml(data.error || 'Failed to start')}</span>`;
+            btn.disabled = false;
+            btn.textContent = 'Start Challenge';
+            return;
+        }
+        
+        // Success - show SSH info
+        displayDynamicContainer(challengeId, data);
+        
+    } catch (err) {
+        statusDiv.innerHTML = `<span style="color:#ff4757">❌ Error: ${escapeHtml(err.message)}</span>`;
+        btn.disabled = false;
+        btn.textContent = 'Start Challenge';
+    }
+}
+
+async function stopChallenge(challengeId) {
+    try {
+        const res = await fetch(`${CONFIG.API_URL}/challenge/${challengeId}/stop`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (res.ok) {
+            clearInterval(containerTimers[challengeId]);
+            loadChallenges(); // Refresh UI
+        }
+    } catch (err) {
+        console.error('Failed to stop challenge:', err);
+    }
+}
+
+async function checkChallengeStatus(challengeId) {
+    try {
+        const res = await fetch(`${CONFIG.API_URL}/challenge/${challengeId}/status`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'running' && data.container) {
+                displayDynamicContainer(challengeId, data);
+            }
+        }
+    } catch (err) {
+        console.error('Failed to check status:', err);
+    }
+}
+
+function displayDynamicContainer(challengeId, data) {
+    const card = document.getElementById(`challenge-${challengeId}`);
+    if (!card) return;
+    
+    const statusDiv = card.querySelector('.dynamic-status');
+    const expiresAt = new Date(data.container.expires_at || data.expires_at);
+    
+    statusDiv.innerHTML = `
+        <div style="background:rgba(46,213,115,0.1);border:1px solid #2ed573;padding:15px;border-radius:5px;margin:10px 0">
+            <strong style="color:#2ed573">✅ Container Running</strong><br>
+            <div style="margin-top:10px;font-size:0.9em">
+                <strong>SSH Command:</strong><br>
+                <code style="background:#000;color:#0f0;padding:5px;display:block;margin:5px 0">ssh ctfuser@localhost -p ${data.container.port}</code>
+                Password: <code>password123</code>
+            </div>
+            <div style="margin-top:10px;color:#666">
+                ⏱️ Time remaining: <strong id="timer-${challengeId}">calculating...</strong>
+            </div>
+            <button class="btn btn-danger" onclick="stopChallenge(${challengeId})" style="margin-top:10px">Stop Container</button>
+        </div>
+    `;
+    
+    // Hide start button
+    const startBtn = card.querySelector('.start-challenge-btn');
+    if (startBtn) startBtn.style.display = 'none';
+    
+    // Start countdown timer
+    startCountdown(challengeId, expiresAt);
+}
+
+function startCountdown(challengeId, expiresAt) {
+    // Clear existing timer
+    if (containerTimers[challengeId]) {
+        clearInterval(containerTimers[challengeId]);
+    }
+    
+    const timerEl = document.getElementById(`timer-${challengeId}`);
+    if (!timerEl) return;
+    
+    containerTimers[challengeId] = setInterval(() => {
+        const now = new Date();
+        const diff = expiresAt - now;
+        
+        if (diff <= 0) {
+            clearInterval(containerTimers[challengeId]);
+            timerEl.textContent = 'EXPIRED';
+            timerEl.style.color = '#ff4757';
+            setTimeout(() => loadChallenges(), 2000);
+            return;
+        }
+        
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        
+        timerEl.textContent = `${hours}h ${minutes}m ${seconds}s`;
+    }, 1000);
 }
 
 function escapeHtml(text) {
