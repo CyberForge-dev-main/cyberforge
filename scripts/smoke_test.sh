@@ -14,16 +14,19 @@ PASS=0
 FAIL=0
 
 test() {
-  echo -n "[$1] "
-  shift
-  if eval "$@" > /dev/null 2>&1; then
-    echo -e "${GREEN}PASS${NC}"
-    ((PASS++))
+  local name="$1"; shift
+  local cmd="$1"
+  echo -n "[$name] "
+  if bash -lc "$cmd" >/dev/null 2>&1; then
+    echo "PASS"
+    PASS=$((PASS+1))
   else
-    echo -e "${RED}FAIL${NC}"
-    ((FAIL++))
+    echo "FAIL"
+    FAIL=$((FAIL+1))
   fi
 }
+
+
 
 # Infrastructure Tests
 echo "Infrastructure:"
@@ -43,10 +46,16 @@ TESTUSER="smoketest_$(date +%s)"
 TESTEMAIL="$TESTUSER@test.local"
 test "Register user" 'curl -sf -X POST http://localhost:5000/api/register -H "Content-Type: application/json" -d "{\"username\":\"'$TESTUSER'\",\"email\":\"'$TESTEMAIL'\",\"password\":\"Pass123\"}"'
 
-TOKEN=$(curl -sf -X POST http://localhost:5000/api/login -H "Content-Type: application/json" -d '{"username":"'$TESTUSER'","password":"Pass123"}' | jq -r '.token')
-test "Login user" '[ ! -z "$TOKEN" ] && [ "$TOKEN" != "null" ]'
+TOKEN=$(curl -sf -X POST http://localhost:5000/api/login -H "Content-Type: application/json" -d '{"username":"'$TESTUSER'","password":"Pass123"}' | jq -r '.access_token')
+export TOKEN
+test "Login user" '[[ -n "$TOKEN" && "$TOKEN" != "null" ]]'
 
-test "Submit flag" 'curl -sf -X POST http://localhost:5000/api/submit_flag -H "Content-Type: application/json" -H "Authorization: Bearer '$TOKEN'" -d "{\"challenge_id\":1,\"flag\":\"flag{welcome_to_ssh}\"}" | jq -e ".success == true"'
+test "Submit flag" "curl -sf -X POST http://localhost:5000/api/submit_flag \
+  -H 'Content-Type: application/json' \
+  -H \"Authorization: Bearer ${TOKEN}\" \
+  -d '{\"challenge_id\":1,\"flag\":\"flag{welcome_to_ssh}\"}' \
+  | jq -e '.correct == true'"
+
 
 test "Leaderboard" 'curl -sf http://localhost:5000/api/leaderboard | jq -e "type == \"array\""'
 echo ""

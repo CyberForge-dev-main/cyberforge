@@ -42,7 +42,7 @@ fi
 
 echo
 echo "4) Submit correct flag for ch1"
-GOOD_FLAG="flag{welcome_to_cyberforge_1}"
+GOOD_FLAG="flag{welcome_to_ssh}"
 
 RESP=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/submit_flag" \
   -H "Content-Type: application/json" \
@@ -55,7 +55,7 @@ BODY=$(echo "$RESP" | head -n-1)
 echo "Status: $CODE | Body:"
 echo "$BODY" | jq .
 
-if [ "$CODE" != "200" ] || [ "$(echo "$BODY" | jq -r '.success')" != "true" ]; then
+if [ "$CODE" != "200" ] || [ "$(echo "$BODY" | jq -r '.correct')" != "true" ]; then
   echo "Correct-flag submission failed"; exit 1
 fi
 
@@ -63,7 +63,7 @@ echo
 echo "5) Check leaderboard"
 LB=$(curl -s "$BASE_URL/api/leaderboard" -H "Authorization: Bearer $TOKEN")
 echo "$LB" | jq .
-POINTS=$(echo "$LB" | jq -r ".[] | select(.username==\"$USER\") | .points")
+POINTS=$(echo "$LB" | jq -r ".[] | select(.username==\"$USER\") | .score")
 if [ -z "$POINTS" ] || [ "$POINTS" = "null" ] || [ "$POINTS" -lt 100 ]; then
   echo "Leaderboard check failed"; exit 1
 fi
@@ -72,7 +72,7 @@ echo
 echo "6) Check user progress"
 UP=$(curl -s "$BASE_URL/api/user/progress" -H "Authorization: Bearer $TOKEN")
 echo "$UP" | jq .
-SOLVED=$(echo "$UP" | jq -r '.challenges_solved')
+SOLVED=$(echo "$UP" | jq -r '.solved')
 if [ "$SOLVED" != "1" ]; then
   echo "User progress check failed"; exit 1
 fi

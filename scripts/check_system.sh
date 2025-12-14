@@ -38,7 +38,7 @@ echo "Challenges Count: $CHALLENGES"
 SUBMIT=$(curl -s -X POST http://localhost:5000/api/submit_flag \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"challenge_id":1,"flag":"flag{welcome_to_cyberforge_1}"}' | jq '.success')
+  -d '{"challenge_id":1,"flag":"flag{welcome_to_ssh}"}' | jq '.correct')
 echo "Submit Flag Success: $SUBMIT"
 
 LEADERBOARD=$(curl -s http://localhost:5000/api/leaderboard \
