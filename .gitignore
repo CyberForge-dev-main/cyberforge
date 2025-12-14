@@ -57,3 +57,8 @@ archive/
 
 # Archive directory
 archive/
+
+.venv/
+backups/
+*.backup_*
+*.save
