@@ -1,3 +1,4 @@
+: "${RL_COOLDOWN_SEC:=0}"
 #!/bin/bash
 # Test rate limiting on /api/submit_flag
 # Expects: 429 after 5 attempts within 60 seconds
@@ -10,7 +11,7 @@ TEST_PASS="Pass123"
 
 echo "=== Rate Limit Test for /api/submit_flag ==="
 
-sleep 61 # reset IP-based limiter window
+if [ "${RL_COOLDOWN_SEC:-0}" -gt 0 ]; then sleep "${RL_COOLDOWN_SEC}"; fi # reset IP-based limiter window
 echo
 
 # 1. Register test user
@@ -67,5 +68,5 @@ fi
 
 echo -e "\n=== Test Complete ==="
 
-echo "Cooldown: waiting 65s to avoid cross-test rate-limit interference..."
-sleep 65
+echo "Cooldown: waiting ${RL_COOLDOWN_SEC:-0}s to avoid cross-test rate-limit interference..."
+if [ "${RL_COOLDOWN_SEC:-0}" -gt 0 ]; then sleep "${RL_COOLDOWN_SEC}"; fi
