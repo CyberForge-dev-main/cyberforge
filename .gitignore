@@ -62,3 +62,6 @@ archive/
 backups/
 *.backup_*
 *.save
+
+# Generated diagnostics
+DIAGNOSTIC_REPORT*.txt
