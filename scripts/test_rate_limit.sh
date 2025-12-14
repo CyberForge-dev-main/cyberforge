@@ -2,7 +2,6 @@
 set -euo pipefail
 : "${RL_RESET_WAIT_SEC:=61}"
 : "${RL_COOLDOWN_SEC:=65}"
-#!/bin/bash
 # Test rate limiting on /api/submit_flag
 # Expects: 429 after 5 attempts within 60 seconds
 
