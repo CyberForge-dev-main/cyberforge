@@ -65,3 +65,6 @@ backups/
 
 # Generated diagnostics
 DIAGNOSTIC_REPORT*.txt
+
+# Diagnostics artifacts (generated)
+dumps/diagnostics/
